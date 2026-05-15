@@ -197,13 +197,16 @@
     .ta-wrap { background:var(--warm-white); border-radius:12px; box-shadow:var(--shadow); overflow:hidden; position:relative; }
     .nb-lines {
       position:absolute; inset:0; pointer-events:none;
-      background-image:
-        linear-gradient(transparent 35px,#e8ead4 35px,#e8ead4 36px),
-        repeating-linear-gradient(transparent,transparent 28px,#e8e0d3 28px,#e8e0d3 29px);
-      background-size:100% 36px,100% 29px;
-      background-position:0 10px,0 22px;
+      /* Single repeating line, period=line-height(29px), offset by padding-top(10px) */
+      background-image: repeating-linear-gradient(
+        to bottom,
+        transparent 0, transparent 28px,
+        #e4e6d6 28px, #e4e6d6 29px
+      );
+      background-size: 100% 29px;
+      background-position: 0 10px;
     }
-    .nb-lines::before { content:''; position:absolute; top:0; bottom:0; left:44px; width:1px; background:rgba(200,120,100,.12); }
+    .nb-lines::before { content:''; position:absolute; top:0; bottom:0; left:43px; width:1px; background:rgba(193,122,92,.09); }
     .j-ta {
       width:100%; min-height:200px; padding:12px 16px 12px 50px;
       border:none; outline:none; resize:none;
@@ -523,6 +526,375 @@
       .j-sidebar { border-left:none; border-top:1px solid var(--border); max-height:none; }
       .ed-weather { font-size:12px; }
     }
+
+    /* ── Block Editor ── */
+    /* ── Block editor ── */
+    /* Blocks connect without gap — first/last get rounded corners */
+    .block-list { display:flex; flex-direction:column; }
+    .block-item {
+      position:relative; background:var(--warm-white);
+      border:1px solid var(--border); overflow:hidden;
+      border-radius:0; box-shadow:none;
+    }
+    .block-item:first-child { border-radius:12px 12px 0 0; }
+    .block-item:last-child  { border-radius:0 0 12px 12px; }
+    .block-item:only-child  { border-radius:12px; }
+    .block-item + .block-item { border-top:none; }
+    .block-item-bar {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:3px 10px; background:rgba(0,0,0,.018);
+      border-bottom:1px solid var(--border);
+      font-size:9px; color:var(--ink); opacity:.4; letter-spacing:1.5px;
+    }
+    .block-del {
+      border:none; background:none; cursor:pointer; font-size:11px;
+      color:var(--ink); opacity:.25; padding:1px 5px; border-radius:5px; transition:all .15s;
+    }
+    .block-del:hover { opacity:.8; background:#fdf0ed; color:var(--terracotta); }
+
+    /* Text block - lined paper, period = line-height 29px */
+    .block-text-wrap { position:relative; }
+    .block-text-lines {
+      position:absolute; inset:0; pointer-events:none;
+      background-image: repeating-linear-gradient(
+        to bottom,
+        transparent 0, transparent 28px,
+        #e4e6d6 28px, #e4e6d6 29px
+      );
+      background-size: 100% 29px;
+      background-position: 0 10px;
+    }
+    .block-text-lines::before { content:''; position:absolute; top:0; bottom:0; left:43px; width:1px; background:rgba(193,122,92,.09); }
+    .block-text-area {
+      width:100%; min-height:100px; padding:10px 16px 12px 50px;
+      border:none; outline:none; resize:none;
+      font:15px/29px inherit; color:var(--ink); background:transparent; position:relative; z-index:1;
+    }
+    .block-text-area::placeholder { color:#c6c1b8; }
+
+    /* Audio block */
+    .block-audio-wrap { padding:11px 14px; display:flex; align-items:center; gap:10px; }
+    .block-audio-play {
+      width:32px; height:32px; border-radius:50%;
+      background:var(--sage); border:none; cursor:pointer; color:white;
+      font-size:12px; display:flex; align-items:center; justify-content:center;
+      flex-shrink:0; transition:all .2s; box-shadow:0 2px 8px rgba(122,154,110,.28);
+    }
+    .block-audio-play:hover { background:#6a8a5e; transform:scale(1.08); }
+    .block-audio-wave { flex:1; height:30px; display:flex; align-items:center; gap:2px; overflow:hidden; }
+    .block-audio-bar {
+      flex-shrink:0; width:2.5px; border-radius:2px; background:var(--sage); opacity:.6;
+      animation:audio-idle 1.5s ease-in-out infinite;
+    }
+    @keyframes audio-idle { 0%,100%{transform:scaleY(1)} 50%{transform:scaleY(.2)} }
+    .block-audio-dur { font-size:10px; color:var(--ink); opacity:.35; flex-shrink:0; font-variant-numeric:tabular-nums; }
+
+    /* Video block */
+    .block-video-wrap { background:#111; position:relative; overflow:hidden; min-height:100px; display:flex; align-items:center; justify-content:center; }
+    .block-video-el { width:100%; max-height:200px; object-fit:cover; display:block; }
+    .block-video-badge { position:absolute; bottom:8px; right:8px; background:rgba(0,0,0,.5); color:white; font-size:9px; padding:3px 8px; border-radius:8px; letter-spacing:.3px; font-variant-numeric:tabular-nums; }
+
+    /* Add-block bar (below blocks) */
+    .block-add-bar {
+      display:flex; align-items:center; gap:8px;
+      padding:10px 0 4px; border-top:1.5px solid rgba(0,0,0,.08);
+      margin-top:8px;
+    }
+    .block-add-bar::before {
+      content:'添加';
+      font-size:10px; color:var(--ink); opacity:.38;
+      letter-spacing:.5px; white-space:nowrap; padding-right:2px;
+    }
+    .block-add-btn {
+      display:flex; align-items:center; gap:5px;
+      padding:7px 16px; border:1.5px solid var(--sage);
+      border-radius:20px; background:rgba(122,154,110,.07);
+      font:12px/1 inherit; color:var(--sage); cursor:pointer;
+      opacity:.8; transition:all .18s; letter-spacing:.3px; font-weight:500;
+    }
+    .block-add-btn:hover { opacity:1; background:rgba(122,154,110,.15); transform:translateY(-1px); box-shadow:0 2px 8px rgba(122,154,110,.2); }
+    .block-add-btn:active { transform:scale(.96) translateY(0); }
+    .block-add-btn.recording { border-color:#e05050; color:#e05050; background:rgba(224,80,80,.07); opacity:1; animation:rec-pulse .8s ease-in-out infinite; }
+    @keyframes rec-pulse { 0%,100%{opacity:1} 50%{opacity:.55} }
+    .block-count { font-size:9px; color:var(--ink); opacity:.2; margin-left:auto; padding-right:2px; }
+
+    /* ── Recording overlay ── */
+    .rec-overlay {
+      display:none; position:fixed; inset:0; z-index:80;
+      background:rgba(0,0,0,.72); align-items:center; justify-content:center;
+    }
+    .rec-overlay.on { display:flex; }
+    .rec-card {
+      background:var(--warm-white); border-radius:20px;
+      padding:32px 40px; text-align:center; min-width:280px;
+      box-shadow:0 12px 48px rgba(0,0,0,.25);
+    }
+    .rec-icon { font-size:48px; margin-bottom:10px; }
+    .rec-type-label { font-size:13px; color:var(--ink); opacity:.45; letter-spacing:3px; margin-bottom:14px; }
+    .rec-video-preview { width:100%; max-height:120px; border-radius:10px; overflow:hidden; margin-bottom:12px; background:#000; }
+    .rec-video-preview video { width:100%; height:120px; object-fit:cover; display:block; }
+    .rec-timer-display { font-size:44px; font-weight:300; color:var(--ink); margin-bottom:6px; font-variant-numeric:tabular-nums; }
+    .rec-wave-display { height:40px; display:flex; align-items:center; justify-content:center; gap:3px; margin:10px 0; }
+    .rec-wave-bar {
+      width:4px; border-radius:2px; background:var(--terracotta);
+      animation:rec-wave .6s ease-in-out infinite;
+    }
+    .rec-wave-bar:nth-child(1){height:8px;animation-delay:0s}
+    .rec-wave-bar:nth-child(2){height:16px;animation-delay:.08s}
+    .rec-wave-bar:nth-child(3){height:26px;animation-delay:.16s}
+    .rec-wave-bar:nth-child(4){height:34px;animation-delay:.24s}
+    .rec-wave-bar:nth-child(5){height:26px;animation-delay:.16s}
+    .rec-wave-bar:nth-child(6){height:16px;animation-delay:.08s}
+    .rec-wave-bar:nth-child(7){height:8px;animation-delay:0s}
+    @keyframes rec-wave { 0%,100%{transform:scaleY(1)} 50%{transform:scaleY(2.5)} }
+    .rec-actions { display:flex; gap:10px; justify-content:center; margin-top:16px; }
+    .rec-stop-btn {
+      padding:10px 28px; border-radius:20px;
+      background:var(--terracotta); color:white; border:none;
+      font:14px/1 inherit; cursor:pointer; letter-spacing:1px; transition:all .2s;
+    }
+    .rec-stop-btn:hover { background:#a06040; transform:translateY(-1px); }
+    .rec-cancel-btn {
+      padding:10px 20px; border-radius:20px;
+      background:rgba(0,0,0,.05); color:var(--ink); border:none;
+      font:13px/1 inherit; cursor:pointer; opacity:.5; transition:all .2s;
+    }
+    .rec-cancel-btn:hover { opacity:.8; }
+
+    /* ── Daily Prophet — Victorian Newspaper ── */
+    #prophet-overlay {
+      display:none; position:fixed; inset:0; z-index:90;
+      background:radial-gradient(ellipse at 50% 40%, rgba(18,10,2,.82) 0%, #050200 100%);
+      align-items:flex-start; justify-content:center;
+      padding:24px 16px; overflow-y:auto;
+    }
+    .prophet-page {
+      position:relative; margin:auto; max-width:580px; width:100%;
+      background-color:#e8d8b0;
+      background-image:
+        radial-gradient(ellipse at center, transparent 50%, rgba(60,35,5,.2) 100%),
+        radial-gradient(circle at 7% 93%,  rgba(130,90,30,.13) 0%, transparent 30%),
+        radial-gradient(circle at 93% 7%,  rgba(120,80,20,.11) 0%, transparent 26%),
+        radial-gradient(circle at 78% 85%, rgba(110,70,10,.09) 0%, transparent 22%),
+        radial-gradient(circle at 18% 20%, rgba(140,100,40,.10) 0%, transparent 24%),
+        radial-gradient(circle at 50% 50%, rgba(200,170,110,.06) 0%, transparent 70%),
+        repeating-linear-gradient(180deg,transparent 0,transparent 26px,rgba(80,50,10,.022) 26px,rgba(80,50,10,.022) 27px);
+      box-shadow:
+        inset 0 0 0 10px #e8d8b0,
+        inset 0 0 0 11px #2a1400,
+        inset 0 0 0 13px #b88820,
+        inset 0 0 0 15px #2a1400,
+        inset 0 0 0 18px rgba(184,136,32,.25),
+        0 0 0 1px #2a1400,
+        0 0 0 3px #b88820,
+        0 0 0 5px #2a1400,
+        0 0 0 6px rgba(184,136,32,.3),
+        12px 18px 48px rgba(0,0,0,.7),
+        -4px -4px 20px rgba(0,0,0,.4);
+      overflow:hidden;
+      animation:prophet-unfurl .65s cubic-bezier(.12,.88,.32,1) forwards;
+    }
+    @keyframes prophet-unfurl {
+      from{opacity:0;transform:scale(.88) rotateX(12deg) translateY(24px);filter:blur(3px)}
+      to  {opacity:1;transform:scale(1)   rotateX(0)     translateY(0);   filter:blur(0)}
+    }
+    .prophet-page::before {
+      content:''; position:absolute; inset:0; pointer-events:none; z-index:0; opacity:.6;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.68' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='320' height='320' filter='url(%23n)' opacity='.065'/%3E%3C/svg%3E");
+    }
+    .prophet-page::after {
+      content:''; position:absolute; inset:19px;
+      border:1px solid rgba(42,20,0,.12); pointer-events:none; z-index:0;
+    }
+    .prophet-masthead { position:relative; z-index:1; text-align:center; padding:14px 32px 0; }
+    .prophet-edition-bar {
+      display:flex; justify-content:space-between; align-items:center;
+      font:400 8px/1 Georgia,serif; letter-spacing:2px; color:#4a2a08; opacity:.65;
+      text-transform:uppercase; padding-bottom:7px;
+    }
+    .prophet-rule-heavy {
+      height:0; border:none; border-top:4px solid #2a1400;
+      box-shadow:0 2px 0 #b88820,0 4px 0 #2a1400;
+      margin:0; position:relative; z-index:1;
+    }
+    .prophet-rule-thin {
+      height:1px; background:linear-gradient(90deg,transparent,#b88820,#2a1400,#b88820,transparent);
+      margin:0; position:relative; z-index:1;
+    }
+    .prophet-rule-gap { height:4px; position:relative; z-index:1; }
+    .prophet-title-en {
+      font:900 13px/1 Georgia,serif; letter-spacing:12px; color:#120800;
+      text-transform:uppercase; padding:10px 0 4px;
+      text-shadow:0 1px 0 rgba(184,136,32,.4),1px 1px 2px rgba(0,0,0,.15);
+    }
+    .prophet-title-orn { font:400 11px/1 Georgia,serif; color:#8a6010; letter-spacing:4px; padding:3px 0; }
+    .prophet-title-zh {
+      font:700 36px/1 Georgia,'STSong','\5b8b\4f53',serif; letter-spacing:13px; color:#120800;
+      padding:6px 0; text-shadow:1px 2px 0 rgba(120,75,10,.25),0 0 40px rgba(200,160,40,.08);
+    }
+    .prophet-tagline-bar {
+      font:italic 9px/1 Georgia,serif; color:#6a4a10; letter-spacing:3px;
+      display:flex; align-items:center; justify-content:center; gap:10px;
+      padding:5px 0 12px;
+    }
+    .prophet-dateline {
+      position:relative; z-index:1;
+      display:flex; align-items:center; justify-content:space-between;
+      padding:5px 32px; flex-wrap:wrap; gap:4px;
+      background:rgba(42,20,0,.05);
+    }
+    .prophet-dateline span { font:400 8.5px/1 Georgia,serif; color:#3a1e04; letter-spacing:1px; }
+    .prophet-dateline span:last-child { font-style:italic; }
+    .prophet-tag-strip { position:relative; z-index:1; padding:5px 32px; border-bottom:1px solid rgba(42,20,0,.14); }
+    .prophet-body { padding:16px 28px 64px; position:relative; z-index:1; display:flex; flex-direction:column; gap:18px; }
+    .prophet-text-block {
+      font:13.5px/2.1 Georgia,'STSong','\5b8b\4f53',serif;
+      color:#140800; text-align:justify; hyphens:auto;
+      column-count:2; column-gap:22px; column-rule:1px solid rgba(42,20,0,.16);
+    }
+    .prophet-text-block.single-col { column-count:1; }
+    /* Victorian Photo Frame */
+    .prophet-photo-section { display:flex; flex-direction:column; align-items:center; }
+    .prophet-photo-ornament-wrap {
+      position:relative; padding:9px; background:#0e0800;
+      border:2px solid #2a1400;
+      box-shadow:
+        0 0 0 1px #b88820,0 0 0 3px #2a1400,0 0 0 5px rgba(184,136,32,.35),
+        8px 12px 32px rgba(0,0,0,.6),-3px -3px 12px rgba(0,0,0,.35);
+      animation:prophet-float 5s ease-in-out infinite;
+    }
+    @keyframes prophet-float {
+      0%,100%{transform:translateY(0) rotate(-.35deg) scale(1)}
+      50%     {transform:translateY(-9px) rotate(.45deg) scale(1.005)}
+    }
+    .prophet-photo-ornament-wrap::before {
+      content:''; position:absolute; inset:6px;
+      border:1px solid rgba(184,136,32,.55); pointer-events:none; z-index:4;
+    }
+    .prophet-photo-ornament-wrap::after {
+      content:''; position:absolute; inset:0; z-index:5; pointer-events:none;
+      background:linear-gradient(135deg,rgba(255,240,160,.08) 0%,transparent 40%),linear-gradient(315deg,rgba(200,150,60,.06) 0%,transparent 40%);
+      animation:prophet-shimmer 4.5s ease-in-out infinite;
+    }
+    @keyframes prophet-shimmer { 0%,100%{opacity:.55} 50%{opacity:1} }
+    .prophet-corner { position:absolute; z-index:6; color:#b88820; font:700 15px/1 Georgia,serif; pointer-events:none; text-shadow:0 0 6px rgba(200,160,40,.7); }
+    .prophet-corner.tl{top:2px;left:3px} .prophet-corner.tr{top:2px;right:3px}
+    .prophet-corner.bl{bottom:2px;left:3px} .prophet-corner.br{bottom:2px;right:3px}
+    .prophet-photo-video {
+      width:100%; display:block; max-height:240px; object-fit:cover; position:relative; z-index:2;
+      filter:sepia(.4) contrast(1.08) brightness(.93) saturate(.85);
+    }
+    .prophet-photo-caption-box {
+      width:100%; text-align:center; padding:6px 16px 4px;
+      background:rgba(42,20,0,.05); border:1px solid rgba(42,20,0,.18); border-top:none;
+    }
+    .prophet-photo-caption-rule { height:1px; margin:3px 20px; background:linear-gradient(90deg,transparent,rgba(42,20,0,.4),transparent); }
+    .prophet-photo-caption-text { font:italic 8.5px/1.6 Georgia,serif; color:#4a2a08; letter-spacing:2.5px; }
+    /* Audio block */
+    .prophet-audio-block {
+      border:1px solid rgba(42,20,0,.22); border-top:2px solid rgba(42,20,0,.38);
+      padding:12px 14px 10px; background:rgba(160,120,60,.06); position:relative;
+    }
+    .prophet-audio-block::before {
+      content:'\2767  \58f0\97f3\6863\6848'; position:absolute; top:-8px; left:14px;
+      font:italic 7.5px/1 Georgia,serif; color:#6a4a10; letter-spacing:1.5px;
+      background:#e8d8b0; padding:0 7px;
+    }
+    .prophet-audio-inner { display:flex; align-items:center; gap:10px; }
+    .prophet-audio-play {
+      width:28px; height:28px; border-radius:50%;
+      background:#2a1400; border:1.5px solid #b88820;
+      cursor:pointer; color:#e8d8b0; font-size:10px;
+      display:flex; align-items:center; justify-content:center;
+      flex-shrink:0; transition:all .2s; box-shadow:0 1px 5px rgba(0,0,0,.4);
+    }
+    .prophet-audio-play:hover { background:#5a3010; transform:scale(1.12); }
+    .prophet-audio-wave { flex:1; height:22px; display:flex; align-items:center; gap:1.5px; }
+    .prophet-audio-bar { flex:1; border-radius:0; background:#2a1400; opacity:.38; min-height:1px; max-height:18px; }
+    .prophet-audio-label { font:italic 8px/1 Georgia,serif; color:#6a4a10; flex-shrink:0; letter-spacing:1px; }
+    .prophet-transcript {
+      margin-top:9px; padding:7px 10px;
+      border-left:2px solid rgba(42,20,0,.28);
+      font:italic 11.5px/1.9 Georgia,'STSong','\5b8b\4f53',serif; color:#1a0800; opacity:.72;
+    }
+    .prophet-sparkle { position:absolute; border-radius:50%; pointer-events:none; animation:sparkle-rise linear infinite; z-index:0; }
+    @keyframes sparkle-rise { 0%{transform:translateY(0) scale(1);opacity:.85} 100%{transform:translateY(-130px) scale(0);opacity:0} }
+    .prophet-close-btn {
+      position:absolute; top:22px; right:22px; z-index:10;
+      width:24px; height:24px; border-radius:50%;
+      background:rgba(42,20,0,.1); border:1px solid rgba(42,20,0,.28);
+      cursor:pointer; font:11px/1 Georgia,serif; color:#4a2a08;
+      display:flex; align-items:center; justify-content:center; transition:all .2s;
+    }
+    .prophet-close-btn:hover { background:rgba(42,20,0,.22); }
+    .prophet-seal {
+      position:absolute; bottom:18px; right:24px; z-index:3; width:56px; height:56px;
+      border-radius:50%; display:flex; align-items:center; justify-content:center;
+      background:radial-gradient(circle at 36% 32%, #e8b828, #9a6800 62%, #5a3800);
+      border:2px solid #c8a010;
+      box-shadow:0 0 0 1px rgba(200,160,20,.4),inset 0 1px 4px rgba(255,220,80,.35),3px 5px 14px rgba(0,0,0,.5);
+      animation:seal-spin 28s linear infinite; opacity:.88;
+    }
+    @keyframes seal-spin { from{transform:rotate(0)} to{transform:rotate(360deg)} }
+    .prophet-seal-inner { font-size:22px; animation:seal-spin 28s linear infinite reverse; }
+    .prophet-footer {
+      position:relative; z-index:1; padding:9px 28px;
+      border-top:1px solid rgba(42,20,0,.16);
+      display:flex; justify-content:space-between; align-items:center;
+      background:rgba(42,20,0,.04);
+    }
+    .prophet-action-btn {
+      padding:4px 14px; border:1px solid; background:transparent;
+      font:8.5px/1.8 Georgia,serif; cursor:pointer; transition:all .2s;
+      letter-spacing:1.5px; text-transform:uppercase;
+    }
+    .prophet-action-close { border-color:rgba(42,20,0,.32); color:#2a1400; }
+    .prophet-action-close:hover { background:rgba(42,20,0,.07); }
+    .prophet-action-del { border-color:rgba(160,50,30,.35); color:#7a1808; }
+    .prophet-action-del:hover { background:rgba(160,50,30,.07); }
+    .prophet-ink-reveal { opacity:0; animation:ink-reveal .85s ease forwards; }
+    @keyframes ink-reveal {
+      from{opacity:0;filter:blur(3px) sepia(.4);transform:translateY(9px)}
+      to  {opacity:1;filter:blur(0)   sepia(0); transform:translateY(0)}
+    }
+
+    /* ── Speech-to-text transcript ── */
+    .rec-transcript-wrap {
+      margin-top:10px; width:100%; text-align:left;
+    }
+    .rec-transcript-label {
+      font-size:9px; letter-spacing:2px; color:var(--ink); opacity:.3;
+      margin-bottom:4px; display:block;
+    }
+    .rec-transcript-box {
+      min-height:36px; max-height:80px; overflow-y:auto;
+      font-size:12px; line-height:1.7; color:var(--ink); opacity:.65;
+      background:rgba(0,0,0,.04); border-radius:8px; padding:7px 10px;
+      text-align:left; transition:opacity .2s;
+    }
+    .rec-transcript-box:empty::before { content:'正在聆听…'; color:#c4bfb6; font-size:11px; }
+    .rec-transcript-interim { color:#aaa; }
+
+    .block-audio-transcript {
+      padding:7px 14px 10px;
+      border-top:1px solid var(--border);
+      background:rgba(0,0,0,.015);
+    }
+    .block-audio-transcript-label {
+      font-size:9px; letter-spacing:2px; color:var(--ink); opacity:.25; margin-bottom:3px;
+    }
+    .block-audio-transcript-text {
+      font-size:12px; line-height:1.7; color:var(--ink); opacity:.6;
+    }
+
+    .prophet-transcript {
+      margin-top:10px; padding:9px 12px;
+      border-top:1px solid rgba(138,106,58,.2);
+      font:italic 12.5px/1.85 Georgia,'STSong','宋体',serif;
+      color:#2a1a05; opacity:.75; position:relative;
+    }
+    .prophet-transcript::before { content:'「'; color:#c8a060; margin-right:2px; font-style:normal; }
+    .prophet-transcript::after  { content:'」'; color:#c8a060; margin-left:2px;  font-style:normal; }
   </style>
 </head>
 <body class="sunny">
@@ -591,15 +963,15 @@
           </div>
         </div>
 
-        <!-- Textarea -->
+        <!-- Block Editor -->
         <div>
-          <p style="font-size:11px;letter-spacing:2px;color:var(--ink);opacity:.25;margin-bottom:8px;">感悟</p>
-          <div class="ta-wrap">
-            <div class="nb-lines"></div>
-            <textarea class="j-ta" id="j-ta" placeholder="记录此刻的所思所感…" oninput="onType()"></textarea>
-            <div class="ta-foot">
-              <span class="wcount" id="wcount">0 字</span>
-            </div>
+          <p style="font-size:11px;letter-spacing:2px;color:var(--ink);opacity:.25;margin-bottom:10px;">感悟</p>
+          <div class="block-list" id="block-list"></div>
+          <div class="block-add-bar">
+            <button class="block-add-btn" onclick="addTextBlock()">📝 文字</button>
+            <button class="block-add-btn" id="audio-tool-btn" onclick="startAudioRecord()">🎙️ 语音</button>
+            <button class="block-add-btn" id="video-tool-btn" onclick="startVideoRecord()">📹 视频</button>
+            <span class="block-count" id="wcount">0 字</span>
           </div>
         </div>
 
@@ -696,6 +1068,37 @@
         <button class="btn-save" onclick="saveSettings()">保存</button>
       </div>
     </div>
+  </div>
+
+  <!-- Recording overlay -->
+  <div class="rec-overlay" id="rec-overlay">
+    <div class="rec-card">
+      <div class="rec-icon" id="rec-icon">🎙️</div>
+      <div class="rec-type-label" id="rec-type-label">语音日记</div>
+      <div class="rec-video-preview" id="rec-video-preview" style="display:none">
+        <video id="rec-video-el" autoplay muted playsinline></video>
+      </div>
+      <div class="rec-timer-display" id="rec-timer-display">00:00</div>
+      <div class="rec-wave-display">
+        <div class="rec-wave-bar"></div><div class="rec-wave-bar"></div>
+        <div class="rec-wave-bar"></div><div class="rec-wave-bar"></div>
+        <div class="rec-wave-bar"></div><div class="rec-wave-bar"></div>
+        <div class="rec-wave-bar"></div>
+      </div>
+      <div class="rec-transcript-wrap" id="rec-transcript-wrap" style="display:none">
+        <span class="rec-transcript-label">实时转文字</span>
+        <div class="rec-transcript-box" id="rec-transcript-box"></div>
+      </div>
+      <div class="rec-actions">
+        <button class="rec-cancel-btn" onclick="cancelRecord()">取消</button>
+        <button class="rec-stop-btn" onclick="stopRecord()">■ 完成</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Daily Prophet overlay -->
+  <div id="prophet-overlay" onclick="bgProphetClick(event)">
+    <div class="prophet-page" id="prophet-page"></div>
   </div>
 
 <script>
@@ -940,16 +1343,16 @@ function openBook() {
   document.getElementById('cover-view').style.display='none';
   const jv=document.getElementById('journal-view');
   jv.style.display='block'; jv.classList.add('slide-in');
-  document.getElementById('j-hdate').textContent = fmtDate(new Date());
-  document.getElementById('j-wsign').textContent = weather.icon + (weather.temp!=null?' '+weather.temp+'°C':'');
-  document.getElementById('ed-weather-icon').textContent = weather.icon;
-  document.getElementById('ed-weather-temp').textContent = weather.temp!=null ? weather.temp+'°C' : '';
-  document.getElementById('ed-weather-date').textContent = '· '+fmtDate(new Date());
+  document.getElementById('j-hdate').textContent=fmtDate(new Date());
+  document.getElementById('j-wsign').textContent=weather.icon+(weather.temp!=null?' '+weather.temp+'°C':'');
+  document.getElementById('ed-weather-icon').textContent=weather.icon;
+  document.getElementById('ed-weather-temp').textContent=weather.temp!=null?weather.temp+'°C':'';
+  document.getElementById('ed-weather-date').textContent='· '+fmtDate(new Date());
+  initEditorBlocks();
   renderTagCloud();
   renderNoteList();
   updateAiBadge();
   checkPeriodicSummary();
-  setTimeout(()=>document.getElementById('j-ta').focus(),300);
 }
 function closeBook() {
   document.getElementById('cover-view').style.display='flex';
@@ -967,25 +1370,37 @@ function onType() {
   document.getElementById('wcount').textContent=n+' 字';
 }
 
-function recordEntry() {
-  const content=document.getElementById('j-ta').value.trim();
-  if (!content) {
+function recordEntry(){
+  const hasContent=editorBlocks.some(b=>{
+    if(b.type==='text') return (b.content||'').trim().length>0;
+    return b.type==='audio'||b.type==='video';
+  });
+  if(!hasContent){
     const btn=document.getElementById('record-btn');
     btn.classList.remove('shake'); void btn.offsetWidth; btn.classList.add('shake');
     return;
   }
   const raw=document.getElementById('j-tag').value.trim().replace(/^#+/,'');
   const tag=raw||'';
+  const firstText=editorBlocks.find(b=>b.type==='text');
+  const content=firstText?.content||'';
+  const blocks=editorBlocks.map(b=>{
+    if(b.type==='text') return {type:'text',content:b.content||''};
+    if(b.type==='audio') return {type:'audio',mediaId:b.mediaId,duration:b.duration,transcript:b.transcript||''};
+    return {type:b.type,mediaId:b.mediaId,duration:b.duration};
+  });
   addEntry({
-    id: Date.now().toString(36)+Math.random().toString(36).slice(2),
-    content, mood:currentMood, tag,
-    wtheme:weather.theme, wicon:weather.icon, temp:weather.temp,
+    id:Date.now().toString(36)+Math.random().toString(36).slice(2),
+    content,blocks,mood:currentMood,tag,
+    wtheme:weather.theme,wicon:weather.icon,temp:weather.temp,
     at:new Date().toISOString()
   });
-  // Clear editor
-  document.getElementById('j-ta').value='';
+  // Cleanup session URLs
+  editorBlocks.forEach(b=>{
+    if(b.url){URL.revokeObjectURL(b.url);if(b.mediaId) delete sessionMediaUrls[b.mediaId];}
+  });
+  initEditorBlocks();
   document.getElementById('j-tag').value='';
-  document.getElementById('wcount').textContent='0 字';
   currentMood='';
   document.querySelectorAll('.mood-btn').forEach(b=>b.classList.remove('on'));
   renderTagCloud();
@@ -1094,14 +1509,20 @@ function renderNoteList() {
       <div class="ng-label">${label}</div>
       ${items.map(e=>{
         const c=e.tag?tagColor(e.tag):null;
-        const prev=e.content.slice(0,42)+(e.content.length>42?'…':'');
+        const eBlocks=getEntryBlocks(e);
+        const firstTxt=eBlocks.find(b=>b.type==='text'&&(b.content||'').trim());
+        const rawPrev=firstTxt?.content||'';
+        const prev=rawPrev.slice(0,38)+(rawPrev.length>38?'…':'');
+        const hasAud=eBlocks.some(b=>b.type==='audio');
+        const hasVid=eBlocks.some(b=>b.type==='video');
+        const mediaBadge=(hasVid?'📹 ':hasAud?'🎙️ ':'');
         return `<div class="note-item" onclick="viewNote('${e.id}')">
           <div class="ni-meta">
             <span class="ni-time">${fmtTime(e.at)}</span>
             <span class="ni-mood">${e.mood||''}</span>
             ${e.tag&&c?`<span class="ni-tag" style="background:${c.bg};color:${c.fg};border-color:${c.bd}">#${esc(e.tag)}</span>`:''}
           </div>
-          <div class="ni-prev">${esc(prev||'（无内容）')}</div>
+          <div class="ni-prev">${mediaBadge}${esc(prev||'（无内容）')}</div>
         </div>`;
       }).join('')}
     </div>`;
@@ -1109,20 +1530,10 @@ function renderNoteList() {
 }
 
 // ── Modal ────────────────────────────────────────────────────────────
-function viewNote(id) {
+function viewNote(id){
   const e=loadEntries().find(x=>x.id===id); if(!e) return;
-  viewingId=id; viewingMemoryId=null;
-  document.getElementById('m-del-btn').onclick=deleteNote;
-  document.getElementById('m-del-btn').style.display='flex';
-  const d=new Date(e.at);
-  document.getElementById('m-date').textContent=`${d.getMonth()+1}月${d.getDate()}日 ${fmtTime(e.at)}`;
-  document.getElementById('m-mood').textContent=e.mood||'';
-  const c=e.tag?tagColor(e.tag):null;
-  document.getElementById('m-tag-row').innerHTML=e.tag&&c
-    ?`<span class="tag-chip" style="background:${c.bg};color:${c.fg};border-color:${c.bd};transform:none">#${esc(e.tag)}</span>`:'';
-  document.getElementById('m-meta').textContent=[e.wicon,e.temp!=null?e.temp+'°C':'',THEMES[e.wtheme]?.desc].filter(Boolean).join(' · ');
-  document.getElementById('m-text').textContent=e.content;
-  document.getElementById('modal-bg').style.display='flex';
+  viewingId=id;
+  showProphetView(e);
 }
 function bgClick(ev) { if(ev.target===document.getElementById('modal-bg')) closeModal(); }
 function closeModal() {
@@ -1142,6 +1553,471 @@ function deleteNote() {
 
 // ── Util ─────────────────────────────────────────────────────────────
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function getEntryBlocks(e) {
+  if (e.blocks && e.blocks.length) return e.blocks;
+  return [{type:'text', content:e.content||''}];
+}
+function genBlockId() { return 'b'+Date.now().toString(36)+Math.random().toString(36).slice(2,5); }
+
+// ── IndexedDB media storage ───────────────────────────────────────────
+const MEDIA_DB_NAME='mood_media_v1', MEDIA_STORE='media';
+let _mediaDB=null;
+function openMediaDB(){
+  if(_mediaDB) return Promise.resolve(_mediaDB);
+  return new Promise((ok,fail)=>{
+    const req=indexedDB.open(MEDIA_DB_NAME,1);
+    req.onupgradeneeded=e=>e.target.result.createObjectStore(MEDIA_STORE,{keyPath:'id'});
+    req.onsuccess=e=>{_mediaDB=e.target.result;ok(_mediaDB);};
+    req.onerror=fail;
+  });
+}
+async function saveMediaBlob(blob,type){
+  const db=await openMediaDB();
+  const id='media_'+Date.now().toString(36)+Math.random().toString(36).slice(2);
+  return new Promise((ok,fail)=>{
+    const tx=db.transaction(MEDIA_STORE,'readwrite');
+    tx.objectStore(MEDIA_STORE).put({id,blob,type});
+    tx.oncomplete=()=>ok(id); tx.onerror=fail;
+  });
+}
+async function loadMediaBlob(id){
+  const db=await openMediaDB();
+  return new Promise((ok,fail)=>{
+    const tx=db.transaction(MEDIA_STORE,'readonly');
+    const req=tx.objectStore(MEDIA_STORE).get(id);
+    req.onsuccess=()=>ok(req.result?req.result.blob:null); req.onerror=fail;
+  });
+}
+function deleteMediaBlob(id){
+  openMediaDB().then(db=>{
+    const tx=db.transaction(MEDIA_STORE,'readwrite');
+    tx.objectStore(MEDIA_STORE).delete(id);
+  }).catch(()=>{});
+}
+
+// ── Block editor state + functions ───────────────────────────────────
+let editorBlocks=[];
+const sessionMediaUrls={};
+
+function initEditorBlocks(){
+  editorBlocks=[{type:'text',content:'',id:genBlockId()}];
+  renderEditorBlocks();
+  updateWordCount();
+}
+
+function addTextBlock(){
+  editorBlocks.push({type:'text',content:'',id:genBlockId()});
+  renderEditorBlocks();
+  const tas=document.querySelectorAll('.block-text-area');
+  if(tas.length) tas[tas.length-1].focus();
+}
+
+function removeBlock(blockId){
+  editorBlocks=editorBlocks.filter(b=>b.id!==blockId);
+  renderEditorBlocks();
+  updateWordCount();
+}
+
+function removeAudioBlock(blockId){
+  const b=editorBlocks.find(x=>x.id===blockId);
+  if(b&&b.mediaId){
+    deleteMediaBlob(b.mediaId);
+    if(sessionMediaUrls[b.mediaId]){URL.revokeObjectURL(sessionMediaUrls[b.mediaId]);delete sessionMediaUrls[b.mediaId];}
+  }
+  removeBlock(blockId);
+}
+function removeVideoBlock(blockId){ removeAudioBlock(blockId); }
+
+function onBlockTextInput(blockId,value){
+  const b=editorBlocks.find(x=>x.id===blockId);
+  if(b) b.content=value;
+  updateWordCount();
+}
+
+function updateWordCount(){
+  const total=editorBlocks.filter(b=>b.type==='text').reduce((s,b)=>s+(b.content||'').replace(/\s/g,'').length,0);
+  const el=document.getElementById('wcount');
+  if(el) el.textContent=total+' 字';
+}
+
+function playBlockAudio(blockId){
+  const a=document.getElementById('ba-'+blockId);
+  if(!a) return;
+  if(a.paused) a.play().catch(()=>{});
+  else a.pause();
+}
+
+function renderEditorBlocks(){
+  const el=document.getElementById('block-list'); if(!el) return;
+  el.innerHTML=editorBlocks.map(b=>{
+    if(b.type==='text') return renderTextBlockHtml(b);
+    if(b.type==='audio') return renderAudioBlockHtml(b);
+    if(b.type==='video') return renderVideoBlockHtml(b);
+    return '';
+  }).join('');
+  // Set textarea values after render (avoids HTML escaping issues)
+  editorBlocks.filter(b=>b.type==='text').forEach(b=>{
+    const ta=document.querySelector('#bi-'+b.id+' .block-text-area');
+    if(ta) ta.value=b.content||'';
+  });
+}
+
+function renderTextBlockHtml(b){
+  const canDel=editorBlocks.length>1;
+  const bar=canDel?`<div class="block-item-bar"><span>📝 文字</span><button class="block-del" onclick="removeBlock('${b.id}')">✕</button></div>`:'';
+  return `<div class="block-item" id="bi-${b.id}">
+    ${bar}
+    <div class="block-text-wrap">
+      <div class="block-text-lines"></div>
+      <textarea class="block-text-area" placeholder="记录此刻的所思所感…" oninput="onBlockTextInput('${b.id}',this.value)"></textarea>
+    </div>
+  </div>`;
+}
+
+function renderAudioBlockHtml(b){
+  const url=b.url||'';
+  const bars=Array.from({length:22},(_,j)=>{
+    const h=4+Math.abs(Math.sin(j*0.65+(b.id.charCodeAt(j%b.id.length)||4))*26);
+    return `<div class="block-audio-bar" style="height:${h.toFixed(0)}px;animation-delay:${(j*0.065).toFixed(2)}s"></div>`;
+  }).join('');
+  const mins=Math.floor((b.duration||0)/60).toString().padStart(2,'0');
+  const secs=((b.duration||0)%60).toString().padStart(2,'0');
+  return `<div class="block-item" id="bi-${b.id}">
+    <div class="block-item-bar"><span>🎙️ 语音</span><button class="block-del" onclick="removeAudioBlock('${b.id}')">✕</button></div>
+    <div class="block-audio-wrap">
+      <button class="block-audio-play" onclick="playBlockAudio('${b.id}')" title="播放/暂停">▶</button>
+      <div class="block-audio-wave">${bars}</div>
+      <span class="block-audio-dur">${mins}:${secs}</span>
+    </div>
+    ${b.transcript?`<div class="block-audio-transcript"><div class="block-audio-transcript-label">转写文字</div><div class="block-audio-transcript-text">${esc(b.transcript)}</div></div>`:''}
+    ${url?`<audio id="ba-${b.id}" src="${url}" style="display:none"></audio>`:''}
+  </div>`;
+}
+
+function renderVideoBlockHtml(b){
+  const url=b.url||'';
+  const mins=Math.floor((b.duration||0)/60).toString().padStart(2,'0');
+  const secs=((b.duration||0)%60).toString().padStart(2,'0');
+  return `<div class="block-item" id="bi-${b.id}">
+    <div class="block-item-bar"><span>📹 视频</span><button class="block-del" onclick="removeVideoBlock('${b.id}')">✕</button></div>
+    <div class="block-video-wrap">
+      ${url?`<video class="block-video-el" src="${url}" controls playsinline></video>`:'<div style="padding:18px;color:#888;text-align:center;font-size:12px">视频已录制</div>'}
+      <span class="block-video-badge">${mins}:${secs}</span>
+    </div>
+  </div>`;
+}
+
+// ── Recording logic ───────────────────────────────────────────────────
+let recorder=null, recStream=null, recChunks=[], recType=null;
+let recTimerInt=null, recSeconds=0;
+let recognition=null, recTranscript='', recInterim='';
+
+async function startAudioRecord(){
+  try{
+    recStream=await navigator.mediaDevices.getUserMedia({audio:true});
+    recType='audio'; recChunks=[]; recSeconds=0;
+    recTranscript=''; recInterim='';
+    document.getElementById('rec-icon').textContent='🎙️';
+    document.getElementById('rec-type-label').textContent='语音日记';
+    document.getElementById('rec-video-preview').style.display='none';
+    document.getElementById('rec-timer-display').textContent='00:00';
+    const tWrap=document.getElementById('rec-transcript-wrap');
+    const tBox=document.getElementById('rec-transcript-box');
+    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(SR){ tWrap.style.display='block'; tBox.innerHTML=''; }
+    else { tWrap.style.display='none'; }
+    document.getElementById('rec-overlay').classList.add('on');
+    const opts=MediaRecorder.isTypeSupported('audio/webm')?{mimeType:'audio/webm'}:{};
+    recorder=new MediaRecorder(recStream,opts);
+    recorder.ondataavailable=e=>{if(e.data.size>0)recChunks.push(e.data);};
+    recorder.onstop=finishRecord;
+    recorder.start();
+    recTimerInt=setInterval(()=>{
+      recSeconds++;
+      const m=Math.floor(recSeconds/60).toString().padStart(2,'0');
+      const s=(recSeconds%60).toString().padStart(2,'0');
+      document.getElementById('rec-timer-display').textContent=`${m}:${s}`;
+      if(recSeconds>=300) stopRecord();
+    },1000);
+    startSpeechRecognition();
+  }catch(err){alert('无法访问麦克风：'+err.message);}
+}
+
+function startSpeechRecognition(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR) return;
+  recognition=new SR();
+  recognition.continuous=true;
+  recognition.interimResults=true;
+  recognition.lang='zh-CN';
+  recognition.onresult=e=>{
+    let interim='';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      if(e.results[i].isFinal) recTranscript+=e.results[i][0].transcript;
+      else interim+=e.results[i][0].transcript;
+    }
+    recInterim=interim;
+    const tBox=document.getElementById('rec-transcript-box');
+    if(tBox) tBox.innerHTML=esc(recTranscript)+(interim?`<span class="rec-transcript-interim">${esc(interim)}</span>`:'');
+  };
+  recognition.onend=()=>{
+    // Auto-restart if recording is still active
+    if(recorder&&recorder.state!=='inactive'){
+      try{recognition.start();}catch(e){}
+    }
+  };
+  try{recognition.start();}catch(e){}
+}
+
+async function startVideoRecord(){
+  try{
+    recStream=await navigator.mediaDevices.getUserMedia({video:true,audio:true});
+    recType='video'; recChunks=[]; recSeconds=0;
+    document.getElementById('rec-icon').textContent='📹';
+    document.getElementById('rec-type-label').textContent='视频日记';
+    const preview=document.getElementById('rec-video-preview');
+    preview.style.display='block';
+    document.getElementById('rec-video-el').srcObject=recStream;
+    document.getElementById('rec-timer-display').textContent='00:00';
+    document.getElementById('rec-overlay').classList.add('on');
+    const opts=MediaRecorder.isTypeSupported('video/webm;codecs=vp9')?{mimeType:'video/webm;codecs=vp9'}
+      :MediaRecorder.isTypeSupported('video/webm')?{mimeType:'video/webm'}:{};
+    recorder=new MediaRecorder(recStream,opts);
+    recorder.ondataavailable=e=>{if(e.data.size>0)recChunks.push(e.data);};
+    recorder.onstop=finishRecord;
+    recorder.start();
+    recTimerInt=setInterval(()=>{
+      recSeconds++;
+      const m=Math.floor(recSeconds/60).toString().padStart(2,'0');
+      const s=(recSeconds%60).toString().padStart(2,'0');
+      document.getElementById('rec-timer-display').textContent=`${m}:${s}`;
+      if(recSeconds>=120) stopRecord();
+    },1000);
+  }catch(err){alert('无法访问摄像头：'+err.message);}
+}
+
+function stopRecord(){
+  if(recorder&&recorder.state!=='inactive') recorder.stop();
+}
+
+function cancelRecord(){
+  if(recognition){recognition.onend=null;try{recognition.stop();}catch(e){}recognition=null;}
+  recTranscript=''; recInterim='';
+  if(recorder&&recorder.state!=='inactive'){recorder.onstop=null;recorder.stop();}
+  if(recStream){recStream.getTracks().forEach(t=>t.stop());recStream=null;}
+  if(recTimerInt){clearInterval(recTimerInt);recTimerInt=null;}
+  recorder=null;recChunks=[];recType=null;recSeconds=0;
+  const ve=document.getElementById('rec-video-el');
+  if(ve) ve.srcObject=null;
+  document.getElementById('rec-overlay').classList.remove('on');
+}
+
+async function finishRecord(){
+  if(recTimerInt){clearInterval(recTimerInt);recTimerInt=null;}
+  // Stop speech recognition and collect final transcript
+  if(recognition){recognition.onend=null;try{recognition.stop();}catch(e){}recognition=null;}
+  // Flush any interim text into final transcript
+  const transcript=(recTranscript+(recInterim?recInterim:'')).trim();
+  recTranscript=''; recInterim='';
+  const mimeType=recorder?recorder.mimeType:(recType==='audio'?'audio/webm':'video/webm');
+  const blob=new Blob(recChunks,{type:mimeType});
+  const duration=recSeconds;
+  const type=recType;
+  if(recStream){recStream.getTracks().forEach(t=>t.stop());recStream=null;}
+  recorder=null;recChunks=[];recType=null;recSeconds=0;
+  const ve=document.getElementById('rec-video-el');
+  if(ve) ve.srcObject=null;
+  document.getElementById('rec-overlay').classList.remove('on');
+  try{
+    const mediaId=await saveMediaBlob(blob,type);
+    const url=URL.createObjectURL(blob);
+    sessionMediaUrls[mediaId]=url;
+    const blockId=genBlockId();
+    editorBlocks.push({id:blockId,type,mediaId,duration,url,transcript:transcript||''});
+    renderEditorBlocks();
+  }catch(err){alert('保存媒体失败：'+err.message);}
+}
+
+// ── Prophet (newspaper) view ──────────────────────────────────────────
+const prophetUrls={};
+let prophetEntryId=null;
+
+async function showProphetView(entry){
+  prophetEntryId=entry.id;
+  const page=document.getElementById('prophet-page');
+  const overlay=document.getElementById('prophet-overlay');
+  const blocks=getEntryBlocks(entry);
+  const d=new Date(entry.at);
+  const wd=['日','一','二','三','四','五','六'][d.getDay()];
+  const dateStr=`${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
+  const timeStr=fmtTime(entry.at);
+  page.innerHTML=buildProphetHtml(entry,blocks,dateStr,timeStr,wd);
+  overlay.style.display='flex';
+  spawnSparkles(page);
+  // Load media
+  for(const b of blocks){
+    if((b.type==='audio'||b.type==='video')&&b.mediaId){
+      try{
+        const blob=await loadMediaBlob(b.mediaId);
+        if(blob){
+          const url=URL.createObjectURL(blob);
+          prophetUrls[b.mediaId]=url;
+          const el=document.getElementById('pm-'+b.mediaId);
+          if(el){
+            el.src=url;
+            if(b.type==='video') el.play().catch(()=>{});
+          }
+        }
+      }catch(e){}
+    }
+  }
+}
+
+function toRoman(n){
+  const vals=[1000,900,500,400,100,90,50,40,10,9,5,4,1];
+  const syms=['M','CM','D','CD','C','XC','L','XL','X','IX','V','IV','I'];
+  let r='';
+  for(let i=0;i<vals.length;i++){while(n>=vals[i]){r+=syms[i];n-=vals[i];}}
+  return r;
+}
+
+function buildProphetHtml(entry,blocks,dateStr,timeStr,wd){
+  const c=entry.tag?tagColor(entry.tag):null;
+  const tagHtml=entry.tag&&c
+    ?`<div class="prophet-tag-strip"><span class="tag-chip" style="background:${c.bg};color:${c.fg};border-color:${c.bd};transform:none;position:static">#${esc(entry.tag)}</span></div>`:''
+  const bodyHtml=blocks.map((b,i)=>buildProphetBlock(b,i)).join('');
+  const vol=toRoman(Math.abs(hashStr(entry.id))%900+100);
+  const iss=Math.abs(hashStr(entry.id+'i'))%365+1;
+  const wDesc=THEMES[entry.wtheme]?.desc||'';
+  const tempStr=entry.temp!=null?entry.temp+'\u00b0C':'';
+  return `
+    <button class="prophet-close-btn" onclick="closeProphet()" title="\u5173\u95ed">\u00d7</button>
+    <div class="prophet-masthead">
+      <div class="prophet-edition-bar">
+        <span>Vol. ${vol}, No. ${iss}</span>
+        <span>Established Anno 1743</span>
+        <span>One Knut</span>
+      </div>
+    </div>
+    <div class="prophet-rule-heavy"></div>
+    <div class="prophet-rule-gap"></div>
+    <div class="prophet-rule-thin"></div>
+    <div class="prophet-masthead" style="padding-top:8px">
+      <div class="prophet-title-en">The Daily Prophet</div>
+      <div class="prophet-title-orn">\u2726 \u2500\u2500\u2500\u2500\u2500\u2500\u2500 \u2726 \u2500\u2500\u2500\u2500\u2500\u2500\u2500 \u2726</div>
+      <div class="prophet-title-zh">\u5fc3\u60c5\u9884\u8a00\u5bb6</div>
+      <div class="prophet-tagline-bar">
+        <span>\u63a2\u89c1\u5185\u5fc3\u7684\u6674\u96e8</span>
+        <span>\u00b7</span>
+        <span>Revealing the Weather Within</span>
+      </div>
+    </div>
+    <div class="prophet-rule-thin"></div>
+    <div class="prophet-rule-gap"></div>
+    <div class="prophet-rule-heavy"></div>
+    <div class="prophet-dateline">
+      <span>${dateStr} \u00b7 \u5468${wd} \u00b7 ${timeStr}</span>
+      <span>${entry.wicon||''}${wDesc?(' '+wDesc):''}${tempStr?(' \u00b7 '+tempStr):''} \u00b7 ${entry.mood||'\u2726'}</span>
+    </div>
+    <div class="prophet-rule-thin"></div>
+    ${tagHtml}
+    <div class="prophet-body">${bodyHtml}</div>
+    <div class="prophet-footer">
+      <div style="display:flex;gap:8px">
+        <button class="prophet-action-btn prophet-action-close" onclick="closeProphet()">\u2190 Close</button>
+        <button class="prophet-action-btn prophet-action-del" onclick="deleteProphetEntry()">\u2715 Delete</button>
+      </div>
+      <div style="font:italic 8.5px/1 Georgia,serif;color:#6a4a10;letter-spacing:2px;opacity:.8">THE DAILY PROPHET \u00b7 MMXXVI</div>
+    </div>
+    <div class="prophet-seal"><span class="prophet-seal-inner">\u2726</span></div>
+  `;
+}
+
+function buildProphetBlock(b,i){
+  const delay=(i*0.09+0.06).toFixed(2);
+  if(b.type==='text'){
+    const txt=(b.content||'').trim();
+    if(!txt) return '';
+    const singleCol=txt.length<200;
+    return `<div class="prophet-text-block${singleCol?' single-col':''} prophet-ink-reveal" style="animation-delay:${delay}s">${esc(txt).replace(/\n/g,'<br>')}</div>`;
+  }
+  if(b.type==='audio'){
+    const seed=b.mediaId||'x';
+    const bars=Array.from({length:32},(_,j)=>{
+      const h=2+Math.abs(Math.sin(j*0.52+(seed.charCodeAt(j%seed.length)||3))*18);
+      return `<div class="prophet-audio-bar" style="height:${h.toFixed(0)}px"></div>`;
+    }).join('');
+    const mins=Math.floor((b.duration||0)/60).toString().padStart(2,'0');
+    const secs=((b.duration||0)%60).toString().padStart(2,'0');
+    return `<div class="prophet-audio-block prophet-ink-reveal" style="animation-delay:${delay}s">
+      <div class="prophet-audio-inner">
+        <button class="prophet-audio-play" onclick="playProphetAudio('${b.mediaId}')">\u25b6</button>
+        <div class="prophet-audio-wave">${bars}</div>
+        <span class="prophet-audio-label">${mins}:${secs}</span>
+        <audio id="pm-${b.mediaId}" style="display:none"></audio>
+      </div>
+      ${b.transcript?`<div class="prophet-transcript">${esc(b.transcript)}</div>`:''}
+    </div>`;
+  }
+  if(b.type==='video'){
+    const mins=Math.floor((b.duration||0)/60).toString().padStart(2,'0');
+    const secs=((b.duration||0)%60).toString().padStart(2,'0');
+    return `<div class="prophet-photo-section prophet-ink-reveal" style="animation-delay:${delay}s">
+      <div class="prophet-photo-ornament-wrap">
+        <span class="prophet-corner tl">\u2756</span>
+        <span class="prophet-corner tr">\u2756</span>
+        <span class="prophet-corner bl">\u2756</span>
+        <span class="prophet-corner br">\u2756</span>
+        <video id="pm-${b.mediaId}" class="prophet-photo-video" autoplay muted loop playsinline></video>
+      </div>
+      <div class="prophet-photo-caption-box">
+        <div class="prophet-photo-caption-rule"></div>
+        <div class="prophet-photo-caption-text">\u2726 Magical Moving Image \u00b7 ${mins}:${secs} \u2726</div>
+        <div class="prophet-photo-caption-rule"></div>
+      </div>
+    </div>`;
+  }
+  return '';
+}
+
+function playProphetAudio(mediaId){
+  const a=document.getElementById('pm-'+mediaId); if(!a) return;
+  if(a.paused) a.play().catch(()=>{}); else a.pause();
+}
+
+function closeProphet(){
+  Object.values(prophetUrls).forEach(u=>URL.revokeObjectURL(u));
+  Object.keys(prophetUrls).forEach(k=>delete prophetUrls[k]);
+  document.getElementById('prophet-overlay').style.display='none';
+  prophetEntryId=null; viewingId=null;
+}
+
+function bgProphetClick(ev){
+  if(ev.target===document.getElementById('prophet-overlay')) closeProphet();
+}
+
+function deleteProphetEntry(){
+  if(!prophetEntryId) return;
+  if(!confirm('\u5220\u9664\u8fd9\u6761\u8bb0\u5f55\uff1f')) return;
+  const e=loadEntries().find(x=>x.id===prophetEntryId);
+  if(e){ getEntryBlocks(e).forEach(b=>{if(b.mediaId) deleteMediaBlob(b.mediaId);}); }
+  removeEntry(prophetEntryId);
+  closeProphet();
+  renderSidebar();
+}
+
+function spawnSparkles(page){
+  const colors=['#e8b020','#d4980c','#c8c050','#f0d060','#b89010','#e0c840'];
+  for(let i=0;i<14;i++){
+    const sp=document.createElement('div');
+    sp.className='prophet-sparkle';
+    const size=1.5+Math.random()*4.5;
+    sp.style.cssText=`left:${4+Math.random()*92}%;bottom:${3+Math.random()*55}%;background:${colors[i%colors.length]};width:${size}px;height:${size}px;animation-duration:${2.5+Math.random()*4}s;animation-delay:${Math.random()*3}s;opacity:.7`;
+    page.appendChild(sp);
+  }
+}
+
 
 // ── Migrate v1 → v2 ─────────────────────────────────────────────────
 function migrateV1() {
@@ -1300,7 +2176,9 @@ async function generateSummary() {
     const entryTexts = entries.map((e, i) => {
       const d = new Date(e.at);
       const dateStr = `${d.getMonth() + 1}月${d.getDate()}日`;
-      return `${i + 1}. [${dateStr}] 心情:${e.mood || '无'} ${e.tag ? '#' + e.tag : ''}\n  内容: ${e.content}`;
+      const eBlocks=getEntryBlocks(e);
+      const textContent=eBlocks.filter(b=>b.type==='text').map(b=>b.content).join(' ');
+      return `${i+1}. [${dateStr}] 心情:${e.mood||'无'} ${e.tag?'#'+e.tag:''}\n  内容: ${textContent}`;
     }).join('\n\n');
 
     const prompt = `你是一位温暖、敏锐的心理陪伴者。以下是用户最近的心情记录：\n\n${entryTexts}\n\n请阅读并分析这些记录。\n\n【要求】\n- 共情而不说教，平等而不居高临下，不诊断、不贴标签。\n- 如出现持续的自我伤害念头等危险信号，在 needsAttention 字段标记 true。\n- 严格只返回 JSON，不要任何前言、解释或 Markdown 代码块标记。\n\n【输出 JSON 格式】\n{\n  "emotions": [\n    { "name": "情绪名", "intensity": 1到5的整数 }\n  ],\n  "summary": "2-3句共情式描述，让用户感到被看见",\n  "possibleCause": "对触发原因的温和推测，信息不足就说明",\n  "userNeed": "用户此刻可能真正需要的（一句话）",\n  "suggestions": ["具体可执行的小建议1", "建议2"],\n  "encouragement": "一句温暖的鼓励收尾",\n  "needsAttention": false\n}`;
