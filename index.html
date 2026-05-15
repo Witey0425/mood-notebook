@@ -135,6 +135,9 @@
     .j-back:hover { opacity:1; background:rgba(0,0,0,.03); }
     .j-hdate { font-size:15px; font-weight:600; color:var(--ink); }
     .j-wsign { font-size:13px; color:var(--ink); opacity:.4; }
+    .io-btn { background:none; border:1px solid var(--border); cursor:pointer; font:12px/1 inherit; color:var(--ink); opacity:.55; padding:5px 10px; border-radius:8px; transition:all .2s; white-space:nowrap; }
+    .io-btn:hover { opacity:1; background:rgba(0,0,0,.03); border-color:var(--sage); color:var(--sage); }
+    #import-file { display:none; }
 
     /* Body: two-column */
     .j-body {
@@ -556,6 +559,9 @@
       <span class="j-hdate" id="j-hdate"></span>
       <div style="display:flex;align-items:center;gap:8px;">
         <span class="j-wsign" id="j-wsign"></span>
+        <button class="io-btn" onclick="exportNotes()" title="导出笔记">↓ 导出</button>
+        <button class="io-btn" onclick="document.getElementById('import-file').click()" title="导入笔记">↑ 导入</button>
+        <input type="file" id="import-file" accept=".json" onchange="importNotes(this)" />
         <button class="settings-gear" onclick="toggleSettings()" title="设置">⚙️</button>
       </div>
     </div>
@@ -699,6 +705,40 @@ function loadEntries() { try { return JSON.parse(localStorage.getItem(KEY)) || [
 function saveEntries(arr) { localStorage.setItem(KEY, JSON.stringify(arr)); }
 function addEntry(e) { const arr = loadEntries(); arr.push(e); saveEntries(arr); }
 function removeEntry(id) { saveEntries(loadEntries().filter(e => e.id !== id)); }
+
+// ── Export / Import ──────────────────────────────────────────────────
+function exportNotes() {
+  const data = { entries: loadEntries(), memories: loadMemories() };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const date = new Date().toISOString().slice(0, 10);
+  a.href = url; a.download = `mood-notebook-export-${date}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+function importNotes(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!Array.isArray(data.entries)) throw new Error('格式不正确');
+      if (!confirm(`即将导入 ${data.entries.length} 条笔记${data.memories?.length ? '和 ' + data.memories.length + ' 条回忆' : ''}，这将覆盖当前全部数据，确定吗？`)) {
+        input.value = ''; return;
+      }
+      saveEntries(data.entries);
+      if (Array.isArray(data.memories)) saveMemories(data.memories);
+      input.value = '';
+      location.reload();
+    } catch {
+      alert('文件解析失败，请确认是否为导出的 JSON 文件。');
+      input.value = '';
+    }
+  };
+  reader.readAsText(file);
+}
 
 // ── State ────────────────────────────────────────────────────────────
 let weather = { theme:'sunny', icon:'☀️', desc:'晴朗', temp:null };
