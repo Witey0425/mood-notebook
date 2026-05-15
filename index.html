@@ -1,0 +1,1464 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>心情笔记本</title>
+  <style>
+    :root {
+      --spine: 22px;
+      --ink: #4a3f35;
+      --paper: #fdf9f2;
+      --cream: #faf7f0;
+      --warm-white: #fffdf7;
+      --sage: #7a9a6e;
+      --terracotta: #c17a5c;
+      --sky: #8badd4;
+      --lavender: #b8a5c9;
+      --border: #e8e0d3;
+      --shadow: 0 2px 12px rgba(74,63,53,.07);
+      --cover-spine: #c4843e;
+      --cover-from: #e8b85a;
+      --cover-to: #c4843e;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+
+    body {
+      font-family:-apple-system,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+      min-height:100vh; display:flex; align-items:center; justify-content:center;
+      overflow:hidden; transition:background 2s ease;
+    }
+
+    /* ── Weather backgrounds ── */
+    body.sunny         { background:linear-gradient(165deg,#f5c882,#e8b85a,#f0d28a); }
+    body.partly-cloudy { background:linear-gradient(165deg,#a8c8e8,#7da8d4,#b8d0ec); }
+    body.cloudy        { background:linear-gradient(165deg,#b8b0a4,#c8c0b8,#b8b0a4); }
+    body.foggy         { background:linear-gradient(165deg,#d8d4cc,#e4e0da,#dcd8d0); }
+    body.rainy         { background:linear-gradient(165deg,#3a4a5a,#4a6a7a,#3a4a5a); }
+    body.snowy         { background:linear-gradient(165deg,#dce8f4,#e8f0f8,#dce8f4); }
+    body.thunderstorm  { background:linear-gradient(165deg,#1a1a2e,#2a2a4e,#1a1a2e); }
+    body.night         { background:linear-gradient(165deg,#1a1e2a,#2a2e4a,#1a1e2a); }
+    body.dawn          { background:linear-gradient(165deg,#f5c4a0,#e8a070,#f0b890); }
+    body.morning       { background:linear-gradient(165deg,#c0e4f8,#88c4e8,#a8d8f0); }
+    body.noon          { background:linear-gradient(165deg,#f8e870,#f0d035,#f5e860); }
+    body.dusk          { background:linear-gradient(165deg,#e89070,#c85878,#cc7068); }
+
+    /* ── Canvas / Sun / Cloud ── */
+    #fx { position:fixed; inset:0; pointer-events:none; z-index:1; }
+
+    #sun {
+      position:fixed; top:8%; right:8%; width:72px; height:72px;
+      border-radius:50%; background:radial-gradient(circle,#fff9e4,#f0c860);
+      box-shadow:0 0 40px rgba(240,200,96,.6),0 0 80px rgba(240,200,96,.25);
+      animation:pulse-sun 3s ease-in-out infinite;
+      z-index:2; pointer-events:none; display:none;
+    }
+    #sun-rays { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); animation:spin 20s linear infinite; }
+    .ray { position:absolute; width:2px; height:28px; background:linear-gradient(to bottom,rgba(240,200,96,.6),transparent); left:50%; transform-origin:bottom center; }
+    @keyframes pulse-sun { 0%,100%{box-shadow:0 0 40px rgba(240,200,96,.6),0 0 80px rgba(240,200,96,.25)} 50%{box-shadow:0 0 60px rgba(240,200,96,.8),0 0 120px rgba(240,200,96,.4)} }
+    @keyframes spin { to{transform:translate(-50%,-50%) rotate(360deg)} }
+
+    .cloud-deco { position:fixed; border-radius:60px; background:rgba(255,255,255,.22); pointer-events:none; z-index:2; animation:drift linear infinite; }
+    .cloud-deco::before,.cloud-deco::after { content:''; position:absolute; background:inherit; border-radius:50%; }
+    @keyframes drift { from{transform:translateX(-250px)} to{transform:translateX(calc(100vw + 250px))} }
+
+    /* ── Cover ── */
+    #cover-view { display:flex; align-items:center; justify-content:center; position:relative; z-index:10; }
+
+    .notebook {
+      display:flex; cursor:pointer;
+      filter:drop-shadow(-6px 10px 24px rgba(74,63,53,.2));
+      transform:rotate(-2deg);
+      transition:transform .3s,filter .3s;
+    }
+    .notebook:hover { transform:rotate(0deg) scale(1.04); filter:drop-shadow(-10px 14px 32px rgba(74,63,53,.28)); }
+
+    .spine { width:var(--spine); min-height:480px; border-radius:4px 0 0 4px; position:relative; overflow:hidden; }
+    .spine::after { content:''; position:absolute; inset:0; background:repeating-linear-gradient(transparent,transparent 10px,rgba(255,255,255,.06) 10px,rgba(255,255,255,.06) 11px); }
+
+    .cover { width:272px; min-height:480px; border-radius:0 12px 12px 0; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:36px 24px 24px; position:relative; overflow:hidden; }
+    .cover::before { content:''; position:absolute; top:0; bottom:0; left:28px; width:2px; background:rgba(0,0,0,.12); }
+
+    body.sunny         .spine{background:var(--cover-spine)} body.sunny         .cover{background:linear-gradient(175deg,var(--cover-from),var(--cover-to))}
+    body.partly-cloudy .spine{background:var(--cover-spine)} body.partly-cloudy .cover{background:linear-gradient(175deg,var(--cover-from),var(--cover-to))}
+    body.cloudy        .spine{background:var(--cover-spine)} body.cloudy        .cover{background:linear-gradient(175deg,var(--cover-from),var(--cover-to))}
+    body.foggy         .spine{background:var(--cover-spine)} body.foggy         .cover{background:linear-gradient(175deg,var(--cover-from),var(--cover-to))}
+    body.rainy         .spine{background:var(--cover-spine)} body.rainy         .cover{background:linear-gradient(175deg,var(--cover-from),var(--cover-to))}
+    body.snowy         .spine{background:var(--cover-spine)} body.snowy         .cover{background:linear-gradient(175deg,var(--cover-from),var(--cover-to))}
+    body.thunderstorm  .spine{background:var(--cover-spine)} body.thunderstorm  .cover{background:linear-gradient(175deg,var(--cover-from),var(--cover-to))}
+    body.night         .spine{background:var(--cover-spine)} body.night         .cover{background:linear-gradient(175deg,var(--cover-from),var(--cover-to))}
+    body.dawn          .spine{background:var(--cover-spine)} body.dawn          .cover{background:linear-gradient(175deg,var(--cover-from),var(--cover-to))}
+    body.morning       .spine{background:var(--cover-spine)} body.morning       .cover{background:linear-gradient(175deg,var(--cover-from),var(--cover-to))}
+    body.noon          .spine{background:var(--cover-spine)} body.noon          .cover{background:linear-gradient(175deg,var(--cover-from),var(--cover-to))}
+    body.dusk          .spine{background:var(--cover-spine)} body.dusk          .cover{background:linear-gradient(175deg,var(--cover-from),var(--cover-to))}
+
+    .c-icon  { font-size:62px; line-height:1; margin-bottom:18px; animation:float 3.5s ease-in-out infinite; }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-9px)} }
+    .c-title { font-size:26px; font-weight:700; letter-spacing:5px; color:rgba(255,255,255,.95); text-shadow:0 2px 8px rgba(0,0,0,.25); margin-bottom:6px; }
+    .c-sub   { font-size:10px; letter-spacing:3px; color:rgba(255,255,255,.5); margin-bottom:28px; }
+    .c-rule  { width:50px; height:1px; background:rgba(255,255,255,.35); margin-bottom:22px; }
+    .c-date  { font-size:13px; color:rgba(255,255,255,.8); margin-bottom:5px; }
+    .c-wdesc { font-size:12px; color:rgba(255,255,255,.6); margin-bottom:3px; }
+    .c-temp  { font-size:38px; font-weight:300; color:rgba(255,255,255,.95); visibility:hidden; }
+    .c-temp sup { font-size:15px; font-weight:400; vertical-align:super; }
+    .c-hint  { position:absolute; bottom:20px; font-size:10px; letter-spacing:3px; color:rgba(255,255,255,.4); animation:blink 2.2s ease-in-out infinite; }
+    @keyframes blink { 0%,100%{opacity:.4} 50%{opacity:.9} }
+
+    /* Cover style switcher */
+    .c-styles {
+      position:absolute; bottom:50px; display:flex; gap:10px; z-index:2;
+    }
+    .cs-dot {
+      width:16px; height:16px; border-radius:50%;
+      cursor:pointer; border:2px solid rgba(255,255,255,.5);
+      transition:all .25s; position:relative;
+    }
+    .cs-dot:hover { transform:scale(1.25); border-color:rgba(255,255,255,.9); }
+    .cs-dot.active { border-color:rgba(255,255,255,.95); box-shadow:0 0 8px rgba(255,255,255,.5); }
+    .cs-dot.active::after { content:''; position:absolute; inset:3px; border-radius:50%; background:rgba(255,255,255,.9); }
+    .cs-warm  { background:#c4843e; }
+    .cs-ink   { background:#2a3a5a; }
+    .cs-bloom { background:#c4908a; }
+    .cs-moss  { background:#7a8a5a; }
+
+    /* ── Journal ── */
+    #journal-view { display:none; position:fixed; inset:0; z-index:20; background:var(--paper); }
+
+    .j-header {
+      height:54px; padding:0 22px;
+      background:var(--warm-white); border-bottom:1px solid var(--border);
+      display:flex; align-items:center; justify-content:space-between;
+      box-shadow:0 1px 4px rgba(74,63,53,.04); z-index:30;
+      flex-shrink:0;
+    }
+    .j-back { display:flex; align-items:center; gap:6px; background:none; border:none; cursor:pointer; font:14px/1 inherit; color:var(--ink); opacity:.55; padding:6px 10px; border-radius:8px; transition:all .2s; }
+    .j-back:hover { opacity:1; background:rgba(0,0,0,.03); }
+    .j-hdate { font-size:15px; font-weight:600; color:var(--ink); }
+    .j-wsign { font-size:13px; color:var(--ink); opacity:.4; }
+
+    /* Body: two-column */
+    .j-body {
+      display:grid; grid-template-columns:60% 40%; height:calc(100vh - 54px); overflow:hidden;
+    }
+
+    /* ── Editor (left) ── */
+    .j-editor { overflow-y:auto; padding:28px 32px 40px; display:flex; flex-direction:column; gap:20px; }
+
+    /* Weather bar in editor */
+    .ed-weather {
+      display:flex; align-items:center; gap:8px;
+      font-size:13px; color:var(--ink); opacity:.45;
+    }
+    .ed-weather-icon { font-size:20px; }
+    .ed-weather-temp { font-weight:500; opacity:.7; }
+
+    /* ── Sidebar (right) ── */
+    .j-sidebar {
+      display:flex; flex-direction:column;
+      border-left:1px solid var(--border);
+      background:var(--warm-white);
+      overflow:hidden;
+    }
+    .j-tabs {
+      display:flex; border-bottom:1px solid var(--border);
+      flex-shrink:0;
+    }
+    .j-tab {
+      flex:1; padding:12px 0; border:none; background:none;
+      font:13px/1 inherit; color:var(--ink); opacity:.35; cursor:pointer;
+      transition:all .2s; letter-spacing:1px;
+    }
+    .j-tab:hover { opacity:.6; background:rgba(0,0,0,.015); }
+    .j-tab.on { opacity:1; font-weight:600; box-shadow:inset 0 -2px 0 var(--sage); color:var(--sage); }
+    .j-pane { display:none; flex:1; overflow-y:auto; padding:16px 20px; }
+    .j-pane.on { display:block; }
+
+    /* Tag cloud / note list in sidebar */
+    .j-pane .tag-cloud { min-height:32px; }
+    .j-pane .no-tags { padding:0; }
+    .ed-notes .ng-label { padding:10px 0 2px; }
+
+    /* Mood */
+    .mood-row { display:flex; gap:6px; flex-wrap:wrap; }
+    .mood-btn {
+      width:38px; height:38px; border:1.5px solid var(--border);
+      border-radius:12px; background:var(--warm-white); font-size:18px;
+      cursor:pointer; display:flex; align-items:center; justify-content:center;
+      box-shadow:var(--shadow);
+      transition:transform .18s,box-shadow .18s,border-color .18s,background .18s;
+    }
+    .mood-btn:hover { transform:scale(1.1); box-shadow:0 4px 16px rgba(74,63,53,.12); }
+    .mood-btn.on { border-color:var(--sage); background:#eef4e8; }
+
+    /* Textarea */
+    .ta-wrap { background:var(--warm-white); border-radius:12px; box-shadow:var(--shadow); overflow:hidden; position:relative; }
+    .nb-lines {
+      position:absolute; inset:0; pointer-events:none;
+      background-image:
+        linear-gradient(transparent 35px,#e8ead4 35px,#e8ead4 36px),
+        repeating-linear-gradient(transparent,transparent 28px,#e8e0d3 28px,#e8e0d3 29px);
+      background-size:100% 36px,100% 29px;
+      background-position:0 10px,0 22px;
+    }
+    .nb-lines::before { content:''; position:absolute; top:0; bottom:0; left:44px; width:1px; background:rgba(200,120,100,.12); }
+    .j-ta {
+      width:100%; min-height:200px; padding:12px 16px 12px 50px;
+      border:none; outline:none; resize:none;
+      font:15px/29px inherit; color:var(--ink); background:transparent; position:relative; z-index:1;
+    }
+    .j-ta::placeholder { color:#c4bfb6; }
+    .ta-foot { display:flex; align-items:center; justify-content:space-between; padding:6px 12px; background:var(--warm-white); border-top:1px solid var(--border); }
+    .wcount { font-size:10px; color:var(--ink); opacity:.25; }
+
+    /* Tag input */
+    .tag-field { display:flex; flex-direction:column; gap:6px; }
+    .tag-row {
+      display:flex; align-items:center; gap:6px;
+      background:var(--warm-white); border-radius:10px; padding:0 10px;
+      box-shadow:var(--shadow);
+      border:1.5px solid var(--border); transition:border-color .2s;
+    }
+    .tag-row:focus-within { border-color:var(--sage); }
+    .tag-prefix { font-size:14px; color:var(--ink); opacity:.3; flex-shrink:0; }
+    .tag-input {
+      flex:1; border:none; outline:none; padding:8px 0;
+      font:13px/1 inherit; color:var(--ink); background:transparent;
+    }
+    .tag-input::placeholder { color:#c4bfb6; }
+    .tag-suggest { display:flex; flex-wrap:wrap; gap:5px; min-height:0; }
+
+    /* Record button */
+    .record-btn {
+      align-self:flex-end; padding:9px 24px;
+      background:var(--terracotta); color:white; border:none;
+      border-radius:20px; font:14px/1 inherit; cursor:pointer;
+      box-shadow:0 3px 12px rgba(193,122,92,.25);
+      transition:transform .18s,box-shadow .18s,background .18s;
+      letter-spacing:2px;
+    }
+    .record-btn:hover { transform:translateY(-1px); box-shadow:0 5px 16px rgba(193,122,92,.35); }
+    .record-btn:active { transform:translateY(0); }
+    .record-btn.shake { animation:shake .35s; }
+    @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+
+    /* Tag cloud — pinned scraps */
+    .tag-cloud { position:relative; min-height:48px; }
+    .no-tags { font-size:11px; color:var(--ink); opacity:.2; }
+
+    .tag-chip {
+      display:inline-block; padding:4px 10px;
+      border-radius:3px 12px 3px 12px; font-size:11px;
+      cursor:pointer; border:1px solid;
+      transition:transform .2s,box-shadow .2s;
+      white-space:nowrap; user-select:none;
+      line-height:1.5;
+      box-shadow:1px 2px 4px rgba(0,0,0,.06);
+    }
+    .tag-cloud .tag-chip { position:absolute; z-index:1; }
+    .tag-chip:hover { transform:scale(1.2) rotate(0deg) !important; box-shadow:3px 4px 12px rgba(0,0,0,.14); }
+    .tag-cloud .tag-chip:hover { z-index:100 !important; }
+    .tag-chip.active { box-shadow:0 0 0 2.5px currentColor; font-weight:600; }
+    .tag-cloud .tag-chip.active { z-index:50; }
+
+    /* Filter bar */
+    .filter-bar {
+      display:none; align-items:center; justify-content:space-between;
+      padding:5px 12px; background:#eef4e8; border-radius:8px;
+      font-size:11px; color:var(--sage); margin-top:8px;
+    }
+    .filter-bar.on { display:flex; }
+    .filter-clear { cursor:pointer; font-size:10px; padding:2px 8px; border-radius:10px; background:var(--sage); color:white; border:none; }
+
+    /* Note list */
+    .note-list { padding:0; }
+    .note-group { margin-bottom:2px; }
+    .ng-label { font-size:10px; letter-spacing:2px; color:var(--ink); opacity:.25; padding:14px 0 4px; }
+    .note-item {
+      padding:9px 0; cursor:pointer;
+      border-bottom:1px solid rgba(0,0,0,.025);
+      transition:background .15s; border-radius:4px;
+    }
+    .note-item:hover { background:rgba(0,0,0,.015); }
+    .ni-meta { display:flex; align-items:center; gap:5px; margin-bottom:2px; }
+    .ni-time { font-size:10px; color:var(--ink); opacity:.3; }
+    .ni-mood { font-size:13px; }
+    .ni-tag  { font-size:10px; padding:2px 7px; border-radius:3px 10px 3px 10px; border:1px solid; }
+    .ni-prev { font-size:11px; color:var(--ink); opacity:.5; line-height:1.5; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .no-notes { font-size:12px; color:var(--ink); opacity:.2; text-align:center; padding:20px 0; }
+
+    /* ── AI detection button ── */
+    .ai-btn {
+      width:100%; padding:9px 0; border:1.5px solid #d4c4e8;
+      border-radius:10px; background:linear-gradient(135deg,#f9f4fa,#f0e8f6); cursor:pointer;
+      font:12px/1 inherit; color:#7a5aaa; letter-spacing:1px;
+      transition:all .2s; margin-bottom:6px;
+    }
+    .ai-btn:hover { border-color:#b898d0; background:linear-gradient(135deg,#f5edfa,#ece0f4); color:#5a3080; }
+    .ai-btn:disabled { opacity:.4; cursor:not-allowed; }
+    .ai-spinner { display:inline-block; width:12px; height:12px; border:2px solid #e0d8e8; border-top-color:#8a70b0; border-radius:50%; animation:ai-spin .6s linear infinite; vertical-align:middle; margin-right:5px; }
+    @keyframes ai-spin { to{transform:rotate(360deg)} }
+
+    .ai-card {
+      background:linear-gradient(150deg,#fdf9f0,#f8f2fa);
+      border:1px solid #e4dae8; border-radius:12px;
+      padding:14px; position:relative; margin-bottom:6px;
+    }
+    .ai-card-text { font-size:12px; line-height:1.9; color:var(--ink); opacity:.7; white-space:pre-wrap; }
+    .ai-card-date { font-size:9px; color:var(--ink); opacity:.2; margin-top:8px; }
+    .ai-card-actions { display:flex; gap:5px; margin-top:8px; }
+    .ai-card-save, .ai-card-discard {
+      padding:4px 12px; border-radius:12px; border:none;
+      font-size:10px; cursor:pointer; transition:background .2s;
+    }
+    .ai-card-save { background:var(--sage); color:white; }
+    .ai-card-save:hover { background:#6a8a5e; }
+    .ai-card-discard { background:rgba(0,0,0,.03); color:var(--ink); opacity:.35; }
+    .ai-card-discard:hover { background:rgba(0,0,0,.06); opacity:.5; }
+
+    /* ── Memory items ── */
+    .memory-item {
+      padding:8px 0; cursor:pointer;
+      border-bottom:1px solid rgba(0,0,0,.02);
+      transition:background .15s;
+      display:flex; align-items:flex-start; gap:7px;
+    }
+    .memory-item:hover { background:rgba(0,0,0,.015); }
+    .memory-icon { font-size:14px; flex-shrink:0; margin-top:0; }
+    .memory-body { flex:1; min-width:0; }
+    .memory-prev { font-size:11px; color:var(--ink); opacity:.5; line-height:1.5; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .memory-date { font-size:9px; color:var(--ink); opacity:.2; margin-top:1px; }
+    .memory-del {
+      flex-shrink:0; width:20px; height:20px; border:none;
+      background:none; cursor:pointer; font-size:10px; color:var(--ink); opacity:.15;
+      border-radius:5px; display:flex; align-items:center; justify-content:center;
+      transition:opacity .15s,background .15s;
+    }
+    .memory-item:hover .memory-del { opacity:.4; }
+    .memory-del:hover { background:#fdf0ed; opacity:1; color:var(--terracotta); }
+    .no-memories { font-size:11px; color:var(--ink); opacity:.2; text-align:center; padding:20px 0; }
+
+    /* ── Bottom AI bar ── */
+    .ai-bottom {
+      flex-shrink:0; border-top:1px solid var(--border);
+      background:linear-gradient(180deg,#f9f4ef,#f5edf8);
+    }
+    .ai-bottom-reminder {
+      display:flex; align-items:center; gap:8px;
+      cursor:pointer; padding:10px 14px;
+      transition:background .2s;
+    }
+    .ai-bottom-reminder:hover { background:rgba(184,165,201,.08); }
+    .ai-bottom-icon {
+      width:32px; height:32px; border-radius:10px;
+      background:linear-gradient(135deg,#e8daf0,#d4c4e8);
+      display:flex; align-items:center; justify-content:center;
+      font-size:15px; flex-shrink:0;
+    }
+    .ai-bottom-text {
+      font-size:12px; color:#6a5090; font-weight:500;
+      letter-spacing:.5px; flex:1;
+    }
+    .ai-bottom-hint {
+      font-size:10px; color:var(--ink); opacity:.2;
+    }
+    .ai-bottom-arrow {
+      font-size:10px; color:#8a70b0;
+      transition:transform .2s;
+    }
+    .ai-bottom-expand { display:none; padding:0 14px 10px; }
+    .ai-bottom-expand.on { display:block; }
+
+    /* ── Modal ── */
+    #modal-bg {
+      display:none; position:fixed; inset:0;
+      background:rgba(74,63,53,.35); z-index:50;
+      align-items:center; justify-content:center; padding:20px;
+    }
+    .modal { background:var(--warm-white); border-radius:18px; width:100%; max-width:540px; max-height:82vh; overflow-y:auto; padding:30px; box-shadow:0 8px 40px rgba(74,63,53,.15); }
+    .modal-head { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; }
+    .modal-left { display:flex; flex-direction:column; gap:5px; }
+    .modal-date { font-size:12px; color:var(--ink); opacity:.4; }
+    .modal-mood { font-size:28px; }
+    .modal-actions { display:flex; gap:8px; align-items:center; }
+    .modal-close { width:32px; height:32px; border:none; background:rgba(0,0,0,.04); border-radius:10px; cursor:pointer; font-size:15px; display:flex; align-items:center; justify-content:center; color:var(--ink); opacity:.4; transition:all .2s; }
+    .modal-close:hover { opacity:.7; background:rgba(0,0,0,.08); }
+    .modal-del   { width:32px; height:32px; border:none; background:#fdf0ed; border-radius:10px; cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center; color:var(--terracotta); transition:all .2s; }
+    .modal-del:hover { background:#fbe0d8; }
+    .modal-meta  { font-size:11px; color:var(--ink); opacity:.3; margin-bottom:10px; }
+    .modal-tag-row { margin-bottom:14px; }
+    .modal-text  { font-size:15px; line-height:2; color:var(--ink); white-space:pre-wrap; }
+
+    /* Transition */
+    .slide-in { animation:slideIn .35s ease forwards; }
+    @keyframes slideIn { from{opacity:0;transform:translateX(32px)} to{opacity:1;transform:translateX(0)} }
+
+    ::-webkit-scrollbar { width:4px; }
+    ::-webkit-scrollbar-thumb { background:rgba(0,0,0,.08); border-radius:2px; }
+
+    /* ── Settings ── */
+    .settings-gear {
+      width:32px; height:32px; border:none; background:none;
+      font-size:18px; cursor:pointer; border-radius:10px;
+      display:flex; align-items:center; justify-content:center;
+      transition:background .2s; color:var(--ink); opacity:.35;
+    }
+    .settings-gear:hover { opacity:.7; background:rgba(0,0,0,.04); }
+
+    #settings-modal {
+      display:none; position:fixed; inset:0;
+      background:rgba(74,63,53,.35); z-index:60;
+      align-items:center; justify-content:center; padding:20px;
+    }
+    .settings-card {
+      background:var(--warm-white); border-radius:18px; width:100%; max-width:400px;
+      padding:28px; display:flex; flex-direction:column; gap:16px;
+      box-shadow:0 8px 40px rgba(74,63,53,.15);
+    }
+    .settings-card h3 { font-size:17px; color:var(--ink); margin:0; }
+    .settings-card label { font-size:12px; color:var(--ink); opacity:.4; letter-spacing:1px; }
+    .settings-card input {
+      width:100%; padding:10px 14px; border:1.5px solid var(--border);
+      border-radius:11px; font:14px/1.4 inherit; outline:none; background:var(--paper);
+      transition:border-color .2s; color:var(--ink);
+    }
+    .settings-card input:focus { border-color:var(--sage); }
+    .settings-hint { font-size:11px; color:var(--ink); opacity:.3; line-height:1.6; margin-top:4px; }
+    .settings-actions { display:flex; gap:8px; justify-content:flex-end; }
+    .settings-actions button {
+      padding:8px 18px; border-radius:11px; border:none;
+      font:13px/1 inherit; cursor:pointer; transition:background .2s;
+    }
+    .btn-cancel { background:rgba(0,0,0,.04); color:var(--ink); opacity:.5; }
+    .btn-cancel:hover { background:rgba(0,0,0,.08); opacity:.7; }
+    .btn-save { background:var(--sage); color:white; }
+    .btn-save:hover { background:#6a8a5e; }
+
+    /* ── AI Analysis Card (rich) ── */
+    .ai-analysis-card {
+      background:linear-gradient(150deg,#fdf9f0,#f8f2fa);
+      border:1px solid #e4dae8; border-radius:14px;
+      overflow:hidden; margin-bottom:6px;
+    }
+    .ai-warn-banner {
+      background:linear-gradient(90deg,#fff3e0,#ffeaea);
+      border-bottom:1px solid #f8c8a8; padding:10px 14px;
+      display:flex; align-items:flex-start; gap:7px;
+      font-size:11px; color:#c06050; line-height:1.6;
+    }
+    .ai-card-body { padding:14px; display:flex; flex-direction:column; gap:11px; }
+    .ai-emotions-row { display:flex; flex-wrap:wrap; gap:6px; }
+    .ai-emotion-chip {
+      display:flex; align-items:center; gap:5px;
+      background:rgba(184,165,201,.1); border:1px solid rgba(184,165,201,.22);
+      border-radius:20px; padding:4px 10px; font-size:11px; color:#6a5090;
+    }
+    .ai-intensity-dots { display:flex; gap:2px; align-items:center; }
+    .ai-dot { width:5px; height:5px; border-radius:50%; }
+    .ai-dot.filled { background:#9a78c0; }
+    .ai-dot.empty  { background:rgba(154,120,192,.18); }
+    .ai-ac-section { display:flex; flex-direction:column; gap:3px; }
+    .ai-ac-label { font-size:9px; letter-spacing:2px; color:var(--ink); opacity:.22; }
+    .ai-ac-body { font-size:11.5px; line-height:1.8; color:var(--ink); opacity:.65; }
+    .ai-need-box {
+      background:linear-gradient(135deg,#eef4e8,#e8f0f8);
+      border:1px solid rgba(122,154,110,.18);
+      border-radius:10px; padding:9px 12px;
+      display:flex; align-items:flex-start; gap:7px;
+      font-size:11.5px; color:#4a7a5a; line-height:1.6;
+    }
+    .ai-suggestions-list { display:flex; flex-direction:column; gap:5px; }
+    .ai-suggestion-item {
+      display:flex; align-items:flex-start; gap:7px;
+      font-size:11px; color:var(--ink); opacity:.6; line-height:1.6;
+    }
+    .ai-suggestion-bullet {
+      flex-shrink:0; width:16px; height:16px; border-radius:5px;
+      background:rgba(122,154,110,.1); border:1px solid rgba(122,154,110,.18);
+      display:flex; align-items:center; justify-content:center;
+      font-size:9px; color:#7a9a6e;
+    }
+    .ai-encouragement {
+      background:linear-gradient(135deg,#fdf5e8,#f8eefc);
+      border-radius:10px; padding:10px 12px 10px 22px;
+      font-size:11.5px; color:#8a6040; font-style:italic;
+      line-height:1.8; position:relative;
+    }
+    .ai-encouragement::before {
+      content:'❝'; font-size:22px; color:rgba(140,96,64,.18);
+      position:absolute; top:4px; left:7px; line-height:1; font-style:normal;
+    }
+    .ai-card-footer {
+      padding:8px 14px 12px; display:flex; gap:6px; justify-content:flex-end;
+      border-top:1px solid rgba(0,0,0,.04);
+    }
+
+    /* ── Periodic nudge ── */
+    .periodic-nudge {
+      margin-bottom:6px; padding:8px 10px; border-radius:10px;
+      background:rgba(184,165,201,.08); border:1px dashed rgba(184,165,201,.3);
+      display:none;
+    }
+    .periodic-nudge.on { display:block; }
+    .periodic-nudge-text { font-size:11px; color:#7a5aaa; opacity:.75; margin-bottom:6px; line-height:1.5; }
+
+    /* ── Settings radio group ── */
+    .settings-radio-group { display:flex; gap:8px; flex-wrap:wrap; margin-top:4px; }
+    .settings-radio-opt {
+      display:flex; align-items:center; gap:5px;
+      font-size:12px; color:var(--ink); opacity:.55;
+      cursor:pointer; padding:6px 14px;
+      border-radius:9px; border:1.5px solid var(--border);
+      transition:all .2s; user-select:none;
+    }
+    .settings-radio-opt input[type=radio] { display:none; }
+    .settings-radio-opt.selected { border-color:var(--sage); background:#eef4e8; opacity:1; color:#4a7a4a; font-weight:600; }
+
+    @media(max-width:720px) {
+      .j-body { grid-template-columns:1fr; height:auto; overflow:visible; }
+      #journal-view { overflow-y:auto; }
+      .j-editor { padding:16px 14px 32px; }
+      .j-sidebar { border-left:none; border-top:1px solid var(--border); max-height:none; }
+      .ed-weather { font-size:12px; }
+    }
+  </style>
+</head>
+<body class="sunny">
+  <canvas id="fx"></canvas>
+  <div id="sun"><div id="sun-rays"></div></div>
+
+  <!-- ── COVER ── -->
+  <div id="cover-view">
+    <div class="notebook" onclick="openBook()">
+      <div class="spine"></div>
+      <div class="cover">
+        <div class="c-icon" id="c-icon">⏳</div>
+        <h1 class="c-title">心情笔记本</h1>
+        <p class="c-sub">MOOD JOURNAL</p>
+        <div class="c-rule"></div>
+        <p class="c-date"  id="c-date"></p>
+        <p class="c-wdesc" id="c-wdesc">正在获取天气…</p>
+        <div class="c-temp" id="c-temp">--<sup>°C</sup></div>
+        <div class="c-styles" id="c-styles" onclick="event.stopPropagation()">
+          <span class="cs-dot cs-warm active" data-style="warm" onclick="switchCoverStyle('warm')" title="暖棕"></span>
+          <span class="cs-dot cs-ink"  data-style="ink"  onclick="switchCoverStyle('ink')"  title="墨蓝"></span>
+          <span class="cs-dot cs-bloom" data-style="bloom" onclick="switchCoverStyle('bloom')" title="樱粉"></span>
+          <span class="cs-dot cs-moss" data-style="moss" onclick="switchCoverStyle('moss')" title="苔绿"></span>
+        </div>
+        <span class="c-hint">点击打开</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── JOURNAL ── -->
+  <div id="journal-view">
+    <div class="j-header">
+      <button class="j-back" onclick="closeBook()">← 封面</button>
+      <span class="j-hdate" id="j-hdate"></span>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="j-wsign" id="j-wsign"></span>
+        <button class="settings-gear" onclick="toggleSettings()" title="设置">⚙️</button>
+      </div>
+    </div>
+
+    <div class="j-body">
+      <!-- Left: Editor -->
+      <div class="j-editor">
+        <!-- Weather bar -->
+        <div class="ed-weather">
+          <span class="ed-weather-icon" id="ed-weather-icon">☀️</span>
+          <span class="ed-weather-temp" id="ed-weather-temp"></span>
+          <span style="opacity:.3" id="ed-weather-date"></span>
+        </div>
+
+        <!-- Mood -->
+        <div>
+          <p style="font-size:11px;letter-spacing:2px;color:var(--ink);opacity:.25;margin-bottom:8px;">心情</p>
+          <div class="mood-row" id="mood-row">
+            <button class="mood-btn" data-m="😊" onclick="pickMood(this)">😊</button>
+            <button class="mood-btn" data-m="😌" onclick="pickMood(this)">😌</button>
+            <button class="mood-btn" data-m="🥰" onclick="pickMood(this)">🥰</button>
+            <button class="mood-btn" data-m="😔" onclick="pickMood(this)">😔</button>
+            <button class="mood-btn" data-m="😤" onclick="pickMood(this)">😤</button>
+            <button class="mood-btn" data-m="😢" onclick="pickMood(this)">😢</button>
+            <button class="mood-btn" data-m="🤔" onclick="pickMood(this)">🤔</button>
+            <button class="mood-btn" data-m="😴" onclick="pickMood(this)">😴</button>
+          </div>
+        </div>
+
+        <!-- Textarea -->
+        <div>
+          <p style="font-size:11px;letter-spacing:2px;color:var(--ink);opacity:.25;margin-bottom:8px;">感悟</p>
+          <div class="ta-wrap">
+            <div class="nb-lines"></div>
+            <textarea class="j-ta" id="j-ta" placeholder="记录此刻的所思所感…" oninput="onType()"></textarea>
+            <div class="ta-foot">
+              <span class="wcount" id="wcount">0 字</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tag input -->
+        <div class="tag-field">
+          <p style="font-size:11px;letter-spacing:2px;color:var(--ink);opacity:.25;margin-bottom:8px;">标签</p>
+          <div class="tag-row">
+            <span class="tag-prefix">#</span>
+            <input type="text" id="j-tag" class="tag-input" placeholder="给这条记录加个标签（可选）"
+              onfocus="showSuggest()" onblur="hideSuggest()" />
+          </div>
+          <div class="tag-suggest" id="tag-suggest"></div>
+        </div>
+
+        <button class="record-btn" id="record-btn" onclick="recordEntry()">记 录</button>
+      </div>
+
+      <!-- Right: Sidebar -->
+      <div class="j-sidebar">
+        <div class="j-tabs">
+          <button class="j-tab on" data-tab="notes" onclick="switchTab('notes')">📝 笔记</button>
+          <button class="j-tab" data-tab="memories" onclick="switchTab('memories')">💭 回忆</button>
+        </div>
+        <div class="j-pane on" id="pane-notes">
+          <div class="tag-cloud" id="tag-cloud"></div>
+          <div class="filter-bar" id="filter-bar">
+            <span id="filter-label"></span>
+            <button class="filter-clear" onclick="clearFilter()">✕ 清除</button>
+          </div>
+          <div class="note-list" id="note-list"></div>
+        </div>
+        <div class="j-pane" id="pane-memories">
+          <div id="memory-list"></div>
+        </div>
+        <div class="ai-bottom">
+          <div class="ai-bottom-reminder" onclick="toggleAiExpand()">
+            <div class="ai-bottom-icon">🪄</div>
+            <div class="ai-bottom-text">AI 心情探测</div>
+            <span id="ai-badge" style="width:7px;height:7px;border-radius:50%;background:var(--lavender);display:none;flex-shrink:0;"></span>
+            <span class="ai-bottom-hint">了解最近的心事</span>
+            <span class="ai-bottom-arrow" id="ai-arrow">▸</span>
+          </div>
+          <div class="ai-bottom-expand" id="ai-expand">
+            <div id="periodic-nudge" class="periodic-nudge">
+              <div class="periodic-nudge-text" id="periodic-nudge-text"></div>
+            </div>
+            <button class="ai-btn" id="ai-btn" onclick="generateSummary()">✨ 探测最近心事</button>
+            <div id="ai-result"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MODAL ── -->
+  <div id="modal-bg" onclick="bgClick(event)">
+    <div class="modal">
+      <div class="modal-head">
+        <div class="modal-left">
+          <span class="modal-date" id="m-date"></span>
+          <span class="modal-mood" id="m-mood"></span>
+        </div>
+        <div class="modal-actions">
+          <button class="modal-del"   id="m-del-btn" onclick="deleteNote()" title="删除">🗑</button>
+          <button class="modal-close" onclick="closeModal()">✕</button>
+        </div>
+      </div>
+      <div class="modal-meta"  id="m-meta"></div>
+      <div class="modal-tag-row" id="m-tag-row"></div>
+      <div class="modal-text"  id="m-text"></div>
+    </div>
+  </div>
+
+  <!-- ── SETTINGS MODAL ── -->
+  <div id="settings-modal" onclick="bgSettingsClick(event)">
+    <div class="settings-card">
+      <h3>⚙️ AI 设置</h3>
+      <div>
+        <label>DeepSeek API Key</label>
+        <input type="password" id="api-key-input" placeholder="sk-..." />
+        <p class="settings-hint">密钥仅保存在浏览器本地存储中，不会上传到任何第三方服务器。<br>AI 仅在你点击「探测」时调用，用于分析你的心情记录。</p>
+      </div>
+      <div>
+        <label>定期心情探测</label>
+        <div class="settings-radio-group" id="periodic-opts">
+          <label class="settings-radio-opt selected" data-val="off" onclick="selectPeriodic('off')"><input type="radio" name="periodic" value="off">关闭</label>
+          <label class="settings-radio-opt" data-val="daily" onclick="selectPeriodic('daily')"><input type="radio" name="periodic" value="daily">每天</label>
+          <label class="settings-radio-opt" data-val="weekly" onclick="selectPeriodic('weekly')"><input type="radio" name="periodic" value="weekly">每周</label>
+        </div>
+        <p class="settings-hint">开启后，打开日记时若超过设定时间未探测，会温和提醒你进行心情分析。</p>
+      </div>
+      <div class="settings-actions">
+        <button class="btn-cancel" onclick="closeSettings()">取消</button>
+        <button class="btn-save" onclick="saveSettings()">保存</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+// ── Storage ─────────────────────────────────────────────────────────
+const KEY = 'mood_nb_v2';
+function loadEntries() { try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch { return []; } }
+function saveEntries(arr) { localStorage.setItem(KEY, JSON.stringify(arr)); }
+function addEntry(e) { const arr = loadEntries(); arr.push(e); saveEntries(arr); }
+function removeEntry(id) { saveEntries(loadEntries().filter(e => e.id !== id)); }
+
+// ── State ────────────────────────────────────────────────────────────
+let weather = { theme:'sunny', icon:'☀️', desc:'晴朗', temp:null };
+let currentMood = '';
+let currentFilter = null;
+let viewingId = null;
+let viewingMemoryId = null;
+let raf = null, particles = [];
+let lightningT = 0, lightningF = 0;
+let autoCover = true;
+let lastWeatherCode = null;
+let lastTimeSlot = null;
+
+const THEMES = {
+  'sunny':         { icon:'☀️',  desc:'晴朗' },
+  'partly-cloudy': { icon:'⛅',  desc:'多云' },
+  'cloudy':        { icon:'☁️',  desc:'阴天' },
+  'foggy':         { icon:'🌫️', desc:'有雾' },
+  'rainy':         { icon:'🌧️', desc:'下雨' },
+  'snowy':         { icon:'🌨️', desc:'下雪' },
+  'thunderstorm':  { icon:'⛈️', desc:'雷暴' },
+  'night':         { icon:'🌙',  desc:'夜晚' },
+  'dawn':          { icon:'🌅',  desc:'破晓' },
+  'morning':       { icon:'🌤️', desc:'晨光' },
+  'noon':          { icon:'☀️',  desc:'晴朗' },
+  'dusk':          { icon:'🌇',  desc:'黄昏' },
+};
+
+const COVER_AUTO = {
+  'dawn':          { spine:'#c4684a', from:'#eca870', to:'#c4684a' },
+  'morning':       { spine:'#4a88b8', from:'#88c4e4', to:'#4a88b8' },
+  'noon':          { spine:'#c49a2a', from:'#e8c850', to:'#c49a2a' },
+  'sunny':         { spine:'#c4843e', from:'#e8b85a', to:'#c4843e' },
+  'partly-cloudy': { spine:'#7a92aa', from:'#a8c4d8', to:'#7a92aa' },
+  'cloudy':        { spine:'#7a8898', from:'#a8b8c8', to:'#7a8898' },
+  'foggy':         { spine:'#8a8a98', from:'#b8b8c4', to:'#8a8a98' },
+  'rainy':         { spine:'#3a5a7a', from:'#5a7a9a', to:'#3a5a7a' },
+  'snowy':         { spine:'#7a9ab8', from:'#b8d0e8', to:'#7a9ab8' },
+  'thunderstorm':  { spine:'#1a1a3a', from:'#2a2a5a', to:'#1a1a3a' },
+  'dusk':          { spine:'#9a4a6a', from:'#d08088', to:'#9a4a6a' },
+  'night':         { spine:'#2a3a5a', from:'#4a5a7a', to:'#2a3a5a' },
+};
+
+// Tag colors (deterministic by tag name)
+const PALETTE = [
+  { bg:'#fdf0e8', fg:'#b8744a', bd:'#e8c8b0' },
+  { bg:'#e8f0e4', fg:'#5a8a4a', bd:'#b8d0a8' },
+  { bg:'#f5eed8', fg:'#a09050', bd:'#d8cca0' },
+  { bg:'#f0e4f4', fg:'#885aaa', bd:'#d0b8e0' },
+  { bg:'#fce8ec', fg:'#b86078', bd:'#e8b8c4' },
+  { bg:'#e4ecf4', fg:'#5a7aaa', bd:'#a8c0d8' },
+  { bg:'#e8f4f0', fg:'#4a8a78', bd:'#a0d0c0' },
+  { bg:'#fdf2e4', fg:'#b08040', bd:'#e0c898' },
+  { bg:'#ece4f0', fg:'#7a6098', bd:'#c8b8d8' },
+  { bg:'#fcece4', fg:'#b87058', bd:'#e8c0a8' },
+];
+
+function hashStr(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
+  return h;
+}
+function tagColor(tag) { return PALETTE[Math.abs(hashStr(tag)) % PALETTE.length]; }
+function tagRot(tag) {
+  const v = Math.abs(hashStr(tag + 'rot')) % 1000 / 1000;
+  return (v * 14 - 7).toFixed(1);
+}
+function tagMt(tag) { return (Math.abs(hashStr(tag + 'mt')) % 12) + 'px'; }
+function tagSize(tag, freq, maxFreq) { return 11 + Math.round((freq / maxFreq) * 7); }
+
+// ── Date helpers ─────────────────────────────────────────────────────
+function today() { return new Date().toISOString().slice(0,10); }
+function yesterday() { return new Date(Date.now()-86400000).toISOString().slice(0,10); }
+function fmtDate(d) {
+  const wd = ['日','一','二','三','四','五','六'][d.getDay()];
+  return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 · 周${wd}`;
+}
+function fmtTime(iso) {
+  return new Date(iso).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',hour12:false});
+}
+function localDateKey(iso) {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+// ── Weather ──────────────────────────────────────────────────────────
+function getTimeSlot() {
+  const h = new Date().getHours();
+  if (h >= 21 || h < 5)  return 'night';
+  if (h >= 5  && h < 7)  return 'dawn';
+  if (h >= 7  && h < 11) return 'morning';
+  if (h >= 11 && h < 14) return 'noon';
+  if (h >= 17)           return 'dusk';
+  return 'afternoon';
+}
+function codeToTheme(c) {
+  const h = new Date().getHours();
+  if (h >= 21 || h < 5) return 'night';
+  if (c >= 95) return 'thunderstorm';
+  if ((c >= 51 && c <= 67) || (c >= 80 && c <= 82)) return 'rainy';
+  if ((c >= 71 && c <= 77) || (c >= 85 && c <= 86)) return 'snowy';
+  if (c >= 11 && c <= 48) return 'foggy';
+  if (c === 3) return 'cloudy';
+  if (c === 2) return 'partly-cloudy';
+  // c 0-1: clear/mainly-clear — use time of day
+  if (h >= 5  && h < 7)  return 'dawn';
+  if (h >= 7  && h < 11) return 'morning';
+  if (h >= 11 && h < 14) return 'noon';
+  if (h >= 17)           return 'dusk';
+  return 'sunny';
+}
+async function getWeather() {
+  try {
+    const pos = await new Promise((ok,fail)=>navigator.geolocation.getCurrentPosition(ok,fail,{timeout:8000}));
+    const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${pos.coords.latitude}&longitude=${pos.coords.longitude}&current=weather_code,temperature_2m&timezone=auto`);
+    const d = await r.json();
+    lastWeatherCode = d.current.weather_code;
+    const theme = codeToTheme(lastWeatherCode);
+    return { theme, temp:Math.round(d.current.temperature_2m), ...THEMES[theme] };
+  } catch {
+    const theme = codeToTheme(0);
+    return { theme, temp:null, ...THEMES[theme] };
+  }
+}
+function applyCoverFromTheme(theme) {
+  const s = COVER_AUTO[theme] || COVER_AUTO['sunny'];
+  document.documentElement.style.setProperty('--cover-spine', s.spine);
+  document.documentElement.style.setProperty('--cover-from', s.from);
+  document.documentElement.style.setProperty('--cover-to', s.to);
+  document.querySelectorAll('.cs-dot').forEach(d => d.classList.remove('active'));
+}
+function applyWeather(w) {
+  weather = w;
+  document.body.className = w.theme;
+  document.getElementById('c-icon').textContent  = w.icon;
+  document.getElementById('c-wdesc').textContent = w.desc;
+  if (w.temp!=null) {
+    const t = document.getElementById('c-temp');
+    t.style.visibility='visible';
+    t.innerHTML=`${w.temp}<sup>°C</sup>`;
+  }
+  const showSun = ['sunny','dawn','morning','noon'].includes(w.theme);
+  document.getElementById('sun').style.display = showSun ? 'block' : 'none';
+  if (showSun) buildSun();
+  buildClouds(w.theme);
+  startFx(w.theme);
+  if (autoCover) applyCoverFromTheme(w.theme);
+}
+function buildSun() {
+  const el = document.getElementById('sun-rays'); el.innerHTML='';
+  for (let i=0;i<12;i++) { const r=document.createElement('div'); r.className='ray'; r.style.transform=`rotate(${i*30}deg) translateY(-52px)`; el.appendChild(r); }
+}
+function buildClouds(theme) {
+  document.querySelectorAll('.cloud-deco').forEach(e=>e.remove());
+  if (!['cloudy','partly-cloudy','foggy'].includes(theme)) return;
+  [{w:160,h:50,top:'12%',dur:'35s',delay:'0s'},{w:220,h:65,top:'28%',dur:'55s',delay:'-18s'},{w:130,h:42,top:'62%',dur:'42s',delay:'-9s'}].forEach(c=>{
+    const el=document.createElement('div'); el.className='cloud-deco';
+    Object.assign(el.style,{width:c.w+'px',height:c.h+'px',top:c.top,animationDuration:c.dur,animationDelay:c.delay,left:'-250px'});
+    document.body.appendChild(el);
+  });
+}
+
+// ── Canvas FX ────────────────────────────────────────────────────────
+const canvas=document.getElementById('fx'), ctx=canvas.getContext('2d');
+function resize() { canvas.width=innerWidth; canvas.height=innerHeight; }
+window.addEventListener('resize',resize); resize();
+
+class Rain { constructor(i){ this.reset(i); } reset(i){ this.x=Math.random()*canvas.width; this.y=i?Math.random()*canvas.height:-20; this.speed=Math.random()*7+8; this.len=Math.random()*14+10; this.a=Math.random()*.22+.08; } tick(){ this.x+=1.8;this.y+=this.speed; if(this.y>canvas.height+20){this.x=Math.random()*canvas.width;this.y=-20;} } draw(){ ctx.beginPath();ctx.moveTo(this.x,this.y);ctx.lineTo(this.x+2,this.y+this.len);ctx.strokeStyle=`rgba(160,205,235,${this.a})`;ctx.lineWidth=1;ctx.stroke(); } }
+class Snow { constructor(i){ this.reset(i); } reset(i){ this.x=Math.random()*canvas.width;this.y=i?Math.random()*canvas.height:-10;this.r=Math.random()*2.5+.5;this.speed=Math.random()*1.2+.3;this.drift=Math.random()*.7-.35;this.phase=Math.random()*Math.PI*2;this.a=Math.random()*.45+.4; } tick(){ this.phase+=.02;this.y+=this.speed;this.x+=this.drift+Math.sin(this.phase)*.4; if(this.y>canvas.height+10){this.y=-10;this.x=Math.random()*canvas.width;} } draw(){ ctx.beginPath();ctx.arc(this.x,this.y,this.r,0,Math.PI*2);ctx.fillStyle=`rgba(220,235,255,${this.a})`;ctx.fill(); } }
+class Star { constructor(){ this.x=Math.random()*canvas.width;this.y=Math.random()*canvas.height;this.r=Math.random()*1.2+.3;this.phase=Math.random()*Math.PI*2;this.spd=Math.random()*.018+.006; } tick(){ this.phase+=this.spd; } draw(){ ctx.beginPath();ctx.arc(this.x,this.y,this.r,0,Math.PI*2);ctx.fillStyle=`rgba(255,255,255,${.3+Math.sin(this.phase)*.35})`;ctx.fill(); } }
+class Fog  { constructor(i){ this.reset(i); } reset(i){ this.x=i?Math.random()*canvas.width:-250;this.y=Math.random()*canvas.height;this.w=Math.random()*200+120;this.h=Math.random()*55+30;this.spd=Math.random()*.25+.08;this.a=Math.random()*.06+.02; } tick(){ this.x+=this.spd; if(this.x>canvas.width+this.w)this.reset(); } draw(){ const g=ctx.createRadialGradient(this.x+this.w/2,this.y,0,this.x+this.w/2,this.y,this.w*.7);g.addColorStop(0,`rgba(210,215,220,${this.a})`);g.addColorStop(1,'rgba(210,215,220,0)');ctx.fillStyle=g;ctx.fillRect(this.x,this.y-this.h,this.w,this.h*2); } }
+
+function startFx(theme) {
+  if (raf) cancelAnimationFrame(raf);
+  particles=[]; lightningT=0; lightningF=0;
+  if (theme==='rainy')        { for(let i=0;i<130;i++)particles.push(new Rain(true)); }
+  if (theme==='thunderstorm') { for(let i=0;i<90;i++) particles.push(new Rain(true)); for(let i=0;i<80;i++)particles.push(new Star()); }
+  if (theme==='snowy')        { for(let i=0;i<90;i++) particles.push(new Snow(true)); }
+  if (theme==='night')        { for(let i=0;i<160;i++)particles.push(new Star()); }
+  if (theme==='foggy')        { for(let i=0;i<18;i++) particles.push(new Fog(true)); }
+  function loop() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    if (theme==='thunderstorm') {
+      lightningT++;
+      if (lightningT>200+Math.random()*300){lightningF=10;lightningT=0;}
+      if (lightningF>0){ctx.fillStyle=`rgba(190,190,255,${lightningF*.014})`;ctx.fillRect(0,0,canvas.width,canvas.height);lightningF--;}
+    }
+    particles.forEach(p=>{p.tick();p.draw();});
+    raf=requestAnimationFrame(loop);
+  }
+  loop();
+}
+
+// ── Cover ────────────────────────────────────────────────────────────
+document.getElementById('c-date').textContent = fmtDate(new Date());
+
+// ── Journal open/close ───────────────────────────────────────────────
+function openBook() {
+  document.getElementById('cover-view').style.display='none';
+  const jv=document.getElementById('journal-view');
+  jv.style.display='block'; jv.classList.add('slide-in');
+  document.getElementById('j-hdate').textContent = fmtDate(new Date());
+  document.getElementById('j-wsign').textContent = weather.icon + (weather.temp!=null?' '+weather.temp+'°C':'');
+  document.getElementById('ed-weather-icon').textContent = weather.icon;
+  document.getElementById('ed-weather-temp').textContent = weather.temp!=null ? weather.temp+'°C' : '';
+  document.getElementById('ed-weather-date').textContent = '· '+fmtDate(new Date());
+  renderTagCloud();
+  renderNoteList();
+  updateAiBadge();
+  checkPeriodicSummary();
+  setTimeout(()=>document.getElementById('j-ta').focus(),300);
+}
+function closeBook() {
+  document.getElementById('cover-view').style.display='flex';
+  document.getElementById('journal-view').style.display='none';
+}
+
+// ── Editor ───────────────────────────────────────────────────────────
+function pickMood(btn) {
+  document.querySelectorAll('.mood-btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  currentMood=btn.dataset.m;
+}
+function onType() {
+  const n=document.getElementById('j-ta').value.replace(/\s/g,'').length;
+  document.getElementById('wcount').textContent=n+' 字';
+}
+
+function recordEntry() {
+  const content=document.getElementById('j-ta').value.trim();
+  if (!content) {
+    const btn=document.getElementById('record-btn');
+    btn.classList.remove('shake'); void btn.offsetWidth; btn.classList.add('shake');
+    return;
+  }
+  const raw=document.getElementById('j-tag').value.trim().replace(/^#+/,'');
+  const tag=raw||'';
+  addEntry({
+    id: Date.now().toString(36)+Math.random().toString(36).slice(2),
+    content, mood:currentMood, tag,
+    wtheme:weather.theme, wicon:weather.icon, temp:weather.temp,
+    at:new Date().toISOString()
+  });
+  // Clear editor
+  document.getElementById('j-ta').value='';
+  document.getElementById('j-tag').value='';
+  document.getElementById('wcount').textContent='0 字';
+  currentMood='';
+  document.querySelectorAll('.mood-btn').forEach(b=>b.classList.remove('on'));
+  renderTagCloud();
+  renderNoteList();
+  updateAiBadge();
+}
+
+// ── Tag suggestions ───────────────────────────────────────────────────
+function showSuggest() {
+  const tags=getUniqueTags();
+  if (!tags.length) return;
+  const el=document.getElementById('tag-suggest');
+  el.innerHTML=tags.slice(0,10).map(tag=>{
+    const c=tagColor(tag);
+    return `<span class="tag-chip" style="background:${c.bg};color:${c.fg};border-color:${c.bd};font-size:11px;cursor:pointer" onmousedown="selectSuggest('${esc(tag)}')">#${esc(tag)}</span>`;
+  }).join('');
+}
+function hideSuggest() { setTimeout(()=>{ document.getElementById('tag-suggest').innerHTML=''; },200); }
+function selectSuggest(tag) { document.getElementById('j-tag').value=tag; document.getElementById('tag-suggest').innerHTML=''; }
+function getUniqueTags() {
+  const seen=new Set();
+  loadEntries().forEach(e=>{ if(e.tag) seen.add(e.tag); });
+  return [...seen];
+}
+
+// ── Sidebar / Views ───────────────────────────────────────────────────
+function renderSidebar() {
+  renderTagCloud();
+  renderNoteList();
+  renderMemories();
+  updateAiBadge();
+}
+
+function updateAiBadge() {
+  const entries = loadEntries();
+  const badge = document.getElementById('ai-badge');
+  if (badge) {
+    badge.style.display = entries.length >= 2 ? 'block' : 'none';
+  }
+}
+
+function renderTagCloud() {
+  const entries=loadEntries();
+  const freq={};
+  entries.forEach(e=>{ if(e.tag) freq[e.tag]=(freq[e.tag]||0)+1; });
+  const keys=Object.keys(freq);
+  const maxF=Math.max(...Object.values(freq),1);
+  const el=document.getElementById('tag-cloud');
+  if (!keys.length) { el.innerHTML='<span class="no-tags">记录时加上标签，它们会出现在这里</span>'; return; }
+
+  // Scatter tags organically — deterministic by tag name hash
+  const containerW = el.clientWidth || 280;
+  const rows = Math.ceil(keys.length / 3);
+  const rowH = Math.max(38, Math.min(52, 160 / Math.max(rows, 1)));
+  const totalH = Math.max(100, (rows + 0.6) * rowH);
+  el.style.minHeight = totalH + 'px';
+
+  el.innerHTML = keys.map((tag, i) => {
+    const c = tagColor(tag);
+    const sz = tagSize(tag, freq[tag], maxF);
+    const h = hashStr(tag);
+    // Deterministic position with organic scatter
+    const col = i % 3;
+    const row = Math.floor(i / 3);
+    const baseX = (col / 3) * containerW;
+    const baseY = row * rowH;
+    const offX = ((Math.abs(h * 7) % 100) / 100 * 30) - 10; // -10 to +20
+    const offY = ((Math.abs(h * 13) % 100) / 100 * 18) - 6; // -6 to +12
+    const x = Math.max(4, Math.min(containerW - 80, baseX + offX));
+    const y = Math.max(0, baseY + offY);
+    const rot = (((Math.abs(h) % 1000) / 1000) * 28 - 14).toFixed(1); // -14 to +14 deg
+    const active = currentFilter === tag ? ' active' : '';
+
+    return `<span class="tag-chip${active}"
+      style="background:${c.bg};color:${c.fg};border-color:${c.bd};
+      font-size:${sz}px; left:${x.toFixed(0)}px; top:${y.toFixed(0)}px;
+      transform:rotate(${rot}deg);"
+      onclick="toggleFilter('${esc(tag)}')">#${esc(tag)}</span>`;
+  }).join('');
+}
+
+function toggleFilter(tag) {
+  currentFilter = currentFilter===tag ? null : tag;
+  const bar=document.getElementById('filter-bar');
+  if (currentFilter) {
+    bar.classList.add('on');
+    document.getElementById('filter-label').textContent='筛选：#'+currentFilter;
+  } else {
+    bar.classList.remove('on');
+  }
+  renderSidebar();
+}
+function clearFilter() { currentFilter=null; document.getElementById('filter-bar').classList.remove('on'); renderSidebar(); }
+
+function renderNoteList() {
+  let entries=loadEntries().sort((a,b)=>b.at.localeCompare(a.at));
+  if (currentFilter) entries=entries.filter(e=>e.tag===currentFilter);
+  if (!entries.length) { document.getElementById('note-list').innerHTML='<div class="no-notes">'+(currentFilter?'该标签暂无记录':'还没有记录，写下第一条吧 ✨')+'</div>'; return; }
+
+  const groups={};
+  entries.forEach(e=>{ const dk=localDateKey(e.at); (groups[dk]=groups[dk]||[]).push(e); });
+  const t=today(), y=yesterday();
+  document.getElementById('note-list').innerHTML=Object.entries(groups).map(([dk,items])=>{
+    const label=dk===t?'今天':dk===y?'昨天':dk.replace(/^20(\d\d)-(\d+)-(\d+)$/,'$1/$2/$3');
+    return `<div class="note-group">
+      <div class="ng-label">${label}</div>
+      ${items.map(e=>{
+        const c=e.tag?tagColor(e.tag):null;
+        const prev=e.content.slice(0,42)+(e.content.length>42?'…':'');
+        return `<div class="note-item" onclick="viewNote('${e.id}')">
+          <div class="ni-meta">
+            <span class="ni-time">${fmtTime(e.at)}</span>
+            <span class="ni-mood">${e.mood||''}</span>
+            ${e.tag&&c?`<span class="ni-tag" style="background:${c.bg};color:${c.fg};border-color:${c.bd}">#${esc(e.tag)}</span>`:''}
+          </div>
+          <div class="ni-prev">${esc(prev||'（无内容）')}</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('');
+}
+
+// ── Modal ────────────────────────────────────────────────────────────
+function viewNote(id) {
+  const e=loadEntries().find(x=>x.id===id); if(!e) return;
+  viewingId=id; viewingMemoryId=null;
+  document.getElementById('m-del-btn').onclick=deleteNote;
+  document.getElementById('m-del-btn').style.display='flex';
+  const d=new Date(e.at);
+  document.getElementById('m-date').textContent=`${d.getMonth()+1}月${d.getDate()}日 ${fmtTime(e.at)}`;
+  document.getElementById('m-mood').textContent=e.mood||'';
+  const c=e.tag?tagColor(e.tag):null;
+  document.getElementById('m-tag-row').innerHTML=e.tag&&c
+    ?`<span class="tag-chip" style="background:${c.bg};color:${c.fg};border-color:${c.bd};transform:none">#${esc(e.tag)}</span>`:'';
+  document.getElementById('m-meta').textContent=[e.wicon,e.temp!=null?e.temp+'°C':'',THEMES[e.wtheme]?.desc].filter(Boolean).join(' · ');
+  document.getElementById('m-text').textContent=e.content;
+  document.getElementById('modal-bg').style.display='flex';
+}
+function bgClick(ev) { if(ev.target===document.getElementById('modal-bg')) closeModal(); }
+function closeModal() {
+  document.getElementById('modal-bg').style.display='none';
+  viewingId=null; viewingMemoryId=null;
+  document.getElementById('m-del-btn').onclick=deleteNote;
+  const mText=document.getElementById('m-text');
+  mText.style.whiteSpace=''; mText.innerHTML='';
+}
+function deleteNote() {
+  if (!viewingId) return;
+  if (!confirm('删除这条记录？')) return;
+  removeEntry(viewingId);
+  closeModal();
+  renderSidebar();
+}
+
+// ── Util ─────────────────────────────────────────────────────────────
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ── Migrate v1 → v2 ─────────────────────────────────────────────────
+function migrateV1() {
+  const MIGRATE_FLAG = 'mood_nb_v1_migrated';
+  if (localStorage.getItem(MIGRATE_FLAG)) return;
+  try {
+    const old = JSON.parse(localStorage.getItem('mood_nb_v1'));
+    if (!old || typeof old !== 'object') { localStorage.setItem(MIGRATE_FLAG,'1'); return; }
+    const existing = loadEntries();
+    const existingIds = new Set(existing.map(e => e.id));
+    const toAdd = [];
+    Object.entries(old).forEach(([dateKey, entry]) => {
+      if (!entry || !entry.content) return;
+      const at = entry.at || (dateKey + 'T12:00:00.000Z');
+      const id = 'v1_' + dateKey;
+      if (!existingIds.has(id)) {
+        toAdd.push({ id, content: entry.content, mood: entry.mood || '', tag: '',
+          wtheme: entry.wtheme || 'sunny', wicon: entry.wicon || '☀️',
+          temp: entry.temp ?? null, at });
+      }
+    });
+    if (toAdd.length) saveEntries([...existing, ...toAdd]);
+    localStorage.setItem(MIGRATE_FLAG, '1');
+  } catch { localStorage.setItem('mood_nb_v1_migrated','1'); }
+}
+
+// ── Settings ──────────────────────────────────────────────────────────
+const API_KEY_KEY = 'mood_nb_api_key';
+function getApiKey() { return localStorage.getItem(API_KEY_KEY) || ''; }
+function setApiKey(k) { localStorage.setItem(API_KEY_KEY, k); }
+
+function toggleSettings() {
+  const el = document.getElementById('settings-modal');
+  if (el.style.display === 'flex') { closeSettings(); return; }
+  document.getElementById('api-key-input').value = getApiKey();
+  const ps = getPeriodicSetting();
+  document.querySelectorAll('#periodic-opts .settings-radio-opt').forEach(opt => {
+    opt.classList.toggle('selected', opt.dataset.val === ps);
+  });
+  el.style.display = 'flex';
+}
+function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; }
+function bgSettingsClick(ev) { if (ev.target === document.getElementById('settings-modal')) closeSettings(); }
+function saveSettings() {
+  setApiKey(document.getElementById('api-key-input').value.trim());
+  const sel = document.querySelector('#periodic-opts .settings-radio-opt.selected');
+  if (sel) setPeriodicSetting(sel.dataset.val);
+  closeSettings();
+}
+
+// ── View switching ─────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.j-tab').forEach(t => t.classList.remove('on'));
+  const tab = document.querySelector(`.j-tab[data-tab="${name}"]`);
+  if (tab) tab.classList.add('on');
+  document.querySelectorAll('.j-pane').forEach(p => p.classList.remove('on'));
+  const pane = document.getElementById(`pane-${name}`);
+  if (pane) pane.classList.add('on');
+  if (name === 'notes') { renderTagCloud(); renderNoteList(); }
+  if (name === 'memories') renderMemories();
+}
+
+function toggleAiExpand() {
+  const expand = document.getElementById('ai-expand');
+  const arrow = document.getElementById('ai-arrow');
+  expand.classList.toggle('on');
+  arrow.textContent = expand.classList.contains('on') ? '▾' : '▸';
+}
+
+// ── Memory Records ────────────────────────────────────────────────────
+const MEM_KEY = 'mood_nb_memories';
+function loadMemories() { try { return JSON.parse(localStorage.getItem(MEM_KEY)) || []; } catch { return []; } }
+function saveMemories(arr) { localStorage.setItem(MEM_KEY, JSON.stringify(arr)); }
+function addMemory(m) { const arr = loadMemories(); arr.push(m); saveMemories(arr); }
+function removeMemory(id) { saveMemories(loadMemories().filter(m => m.id !== id)); }
+
+function renderMemories() {
+  const memories = loadMemories().sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const el = document.getElementById('memory-list');
+  if (!memories.length) {
+    el.innerHTML = '<div class="no-memories">AI 生成的心事总结会保存在这里</div>';
+    return;
+  }
+  el.innerHTML = memories.map(m => {
+    const d = new Date(m.createdAt);
+    const dateStr = `${d.getMonth() + 1}月${d.getDate()}日`;
+    const previewSrc = m.jsonData ? (m.jsonData.summary || m.content) : m.content;
+    const prev = previewSrc.slice(0, 36) + (previewSrc.length > 36 ? '…' : '');
+    return `<div class="memory-item" onclick="viewMemory('${m.id}')">
+      <span class="memory-icon">💭</span>
+      <div class="memory-body">
+        <div class="memory-prev">${esc(prev)}</div>
+        <div class="memory-date">${dateStr} · 基于 ${m.entryCount} 条记录</div>
+      </div>
+      <button class="memory-del" onclick="event.stopPropagation();deleteMemory('${m.id}')" title="删除">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function viewMemory(id) {
+  const m = loadMemories().find(x => x.id === id);
+  if (!m) return;
+  viewingId = null; viewingMemoryId = id;
+  const d = new Date(m.createdAt);
+  document.getElementById('m-date').textContent = `${d.getMonth() + 1}月${d.getDate()}日 ${fmtTime(m.createdAt)}`;
+  document.getElementById('m-mood').textContent = '💭';
+  document.getElementById('m-tag-row').innerHTML = '<span class="tag-chip" style="background:#f0e4f4;color:#885aaa;border-color:#d0b8e0">回忆</span>';
+  document.getElementById('m-meta').textContent = `基于 ${m.entryCount} 条心情记录生成`;
+  const mText = document.getElementById('m-text');
+  if (m.jsonData) {
+    mText.style.whiteSpace = 'normal';
+    mText.innerHTML = renderAiCard(m.jsonData, m.entryCount, false);
+  } else {
+    mText.style.whiteSpace = '';
+    mText.textContent = m.content;
+  }
+  document.getElementById('m-del-btn').style.display = 'flex';
+  document.getElementById('m-del-btn').onclick = function () {
+    if (!confirm('删除这条回忆记录？')) return;
+    removeMemory(viewingMemoryId);
+    closeModal();
+    renderMemories();
+  };
+  document.getElementById('modal-bg').style.display = 'flex';
+}
+
+function deleteMemory(id) {
+  if (!confirm('删除这条回忆记录？')) return;
+  removeMemory(id);
+  renderMemories();
+}
+
+// ── AI Summary ────────────────────────────────────────────────────────
+let pendingSummary = null;
+
+async function generateSummary() {
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    alert('请先设置 DeepSeek API Key。点击右上角 ⚙️ 图标进行设置。');
+    return;
+  }
+
+  const entries = loadEntries().sort((a, b) => b.at.localeCompare(a.at)).slice(0, 15);
+  if (entries.length < 2) {
+    alert('至少需要 2 条心情记录才能生成总结。');
+    return;
+  }
+
+  const btn = document.getElementById('ai-btn');
+  const resultEl = document.getElementById('ai-result');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="ai-spinner"></span>AI 思考中…';
+  resultEl.innerHTML = '';
+
+  try {
+    const entryTexts = entries.map((e, i) => {
+      const d = new Date(e.at);
+      const dateStr = `${d.getMonth() + 1}月${d.getDate()}日`;
+      return `${i + 1}. [${dateStr}] 心情:${e.mood || '无'} ${e.tag ? '#' + e.tag : ''}\n  内容: ${e.content}`;
+    }).join('\n\n');
+
+    const prompt = `你是一位温暖、敏锐的心理陪伴者。以下是用户最近的心情记录：\n\n${entryTexts}\n\n请阅读并分析这些记录。\n\n【要求】\n- 共情而不说教，平等而不居高临下，不诊断、不贴标签。\n- 如出现持续的自我伤害念头等危险信号，在 needsAttention 字段标记 true。\n- 严格只返回 JSON，不要任何前言、解释或 Markdown 代码块标记。\n\n【输出 JSON 格式】\n{\n  "emotions": [\n    { "name": "情绪名", "intensity": 1到5的整数 }\n  ],\n  "summary": "2-3句共情式描述，让用户感到被看见",\n  "possibleCause": "对触发原因的温和推测，信息不足就说明",\n  "userNeed": "用户此刻可能真正需要的（一句话）",\n  "suggestions": ["具体可执行的小建议1", "建议2"],\n  "encouragement": "一句温暖的鼓励收尾",\n  "needsAttention": false\n}`;
+
+    const resp = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'deepseek-chat', max_tokens: 800, messages: [{ role: 'user', content: prompt }] })
+    });
+
+    if (!resp.ok) throw new Error(`API 请求失败 (${resp.status}): ${await resp.text()}`);
+
+    const data = await resp.json();
+    let raw = data.choices[0].message.content.trim();
+    raw = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '');
+
+    let parsed;
+    try { parsed = JSON.parse(raw); }
+    catch { throw new Error('AI 返回格式异常，请重试。'); }
+
+    pendingSummary = {
+      content: [parsed.summary, parsed.encouragement].filter(Boolean).join('\n\n'),
+      jsonData: parsed,
+      entryCount: entries.length
+    };
+    setLastAnalysisTime(new Date().toISOString());
+    hidePeriodicNudge();
+    resultEl.innerHTML = renderAiCard(parsed, entries.length);
+
+  } catch (err) {
+    resultEl.innerHTML = `<div class="ai-card" style="background:#fff5f5;border-color:#fcc;padding:14px;">
+      <div class="ai-card-text" style="color:#c55;">生成失败：${esc(err.message)}</div>
+    </div>`;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '✨ 探测最近心事';
+  }
+}
+
+function savePendingMemory() {
+  if (!pendingSummary) return;
+  addMemory({
+    id: 'mem_' + Date.now().toString(36) + Math.random().toString(36).slice(2),
+    content: pendingSummary.content,
+    jsonData: pendingSummary.jsonData,
+    entryCount: pendingSummary.entryCount,
+    createdAt: new Date().toISOString()
+  });
+  pendingSummary = null;
+  const resultEl = document.getElementById('ai-result');
+  resultEl.innerHTML = '<div style="padding:12px;text-align:center;font-size:11px;color:var(--sage);">已保存到回忆 ✓</div>';
+  setTimeout(() => { resultEl.innerHTML = ''; }, 1800);
+  renderMemories();
+  switchTab('memories');
+}
+
+function discardSummary() {
+  pendingSummary = null;
+  document.getElementById('ai-result').innerHTML = '';
+}
+
+// ── AI Card Renderer ──────────────────────────────────────────────────
+function renderAiCard(data, entryCount, showActions = true) {
+  const dots = n => Array.from({length:5},(_,i)=>`<span class="ai-dot ${i<n?'filled':'empty'}"></span>`).join('');
+
+  const emotionsHtml = (data.emotions||[]).map(e =>
+    `<span class="ai-emotion-chip">${esc(e.name)}<span class="ai-intensity-dots">${dots(e.intensity)}</span></span>`
+  ).join('');
+
+  const suggestionsHtml = (data.suggestions||[]).map((s,i) =>
+    `<div class="ai-suggestion-item"><span class="ai-suggestion-bullet">${i+1}</span><span>${esc(s)}</span></div>`
+  ).join('');
+
+  const warnHtml = data.needsAttention
+    ? `<div class="ai-warn-banner">⚠️ 我注意到你的记录中有一些让我担心的信号，希望你知道你并不孤单。如需支持，可拨打心理援助热线：<strong>400-161-9995</strong>（全国）。</div>`
+    : '';
+
+  return `<div class="ai-analysis-card">
+    ${warnHtml}
+    <div class="ai-card-body">
+      ${emotionsHtml ? `<div class="ai-emotions-row">${emotionsHtml}</div>` : ''}
+      ${data.summary ? `<div class="ai-ac-section"><div class="ai-ac-label">我看见你</div><div class="ai-ac-body">${esc(data.summary)}</div></div>` : ''}
+      ${data.possibleCause ? `<div class="ai-ac-section"><div class="ai-ac-label">可能的触发</div><div class="ai-ac-body">${esc(data.possibleCause)}</div></div>` : ''}
+      ${data.userNeed ? `<div class="ai-need-box">💫 ${esc(data.userNeed)}</div>` : ''}
+      ${suggestionsHtml ? `<div class="ai-ac-section"><div class="ai-ac-label">小建议</div><div class="ai-suggestions-list">${suggestionsHtml}</div></div>` : ''}
+      ${data.encouragement ? `<div class="ai-encouragement">${esc(data.encouragement)}</div>` : ''}
+      <div style="font-size:9px;color:var(--ink);opacity:.2;">基于最近 ${entryCount} 条记录 · ${fmtTime(new Date().toISOString())}</div>
+    </div>
+    ${showActions ? `<div class="ai-card-footer">
+      <button class="ai-card-save" onclick="savePendingMemory()">保存为回忆</button>
+      <button class="ai-card-discard" onclick="discardSummary()">丢弃</button>
+    </div>` : ''}
+  </div>`;
+}
+
+// ── Periodic Summary ──────────────────────────────────────────────────
+const PERIODIC_KEY = 'mood_nb_periodic';
+const LAST_ANALYSIS_KEY = 'mood_nb_last_analysis';
+function getPeriodicSetting() { return localStorage.getItem(PERIODIC_KEY) || 'off'; }
+function setPeriodicSetting(v) { localStorage.setItem(PERIODIC_KEY, v); }
+function getLastAnalysisTime() { return localStorage.getItem(LAST_ANALYSIS_KEY) || null; }
+function setLastAnalysisTime(t) { localStorage.setItem(LAST_ANALYSIS_KEY, t); }
+
+function checkPeriodicSummary() {
+  const setting = getPeriodicSetting();
+  if (setting === 'off') return;
+  if (loadEntries().length < 2) return;
+  const last = getLastAnalysisTime();
+  const now = Date.now();
+  const threshold = setting === 'daily' ? 86400000 : 7 * 86400000;
+  if (last && (now - new Date(last).getTime()) < threshold) return;
+  const days = last ? Math.floor((now - new Date(last).getTime()) / 86400000) : null;
+  const msg = days
+    ? `距离上次心情探测已经 ${days} 天了，要不要来看看最近的心情状态？`
+    : (setting === 'daily' ? '今天还没有探测过心情哦 ✨' : '本周还没有探测过心情哦 ✨');
+  const nudge = document.getElementById('periodic-nudge');
+  const nudgeText = document.getElementById('periodic-nudge-text');
+  if (!nudge || !nudgeText) return;
+  nudgeText.textContent = msg;
+  nudge.classList.add('on');
+  const expand = document.getElementById('ai-expand');
+  const arrow = document.getElementById('ai-arrow');
+  if (expand && !expand.classList.contains('on')) {
+    expand.classList.add('on');
+    if (arrow) arrow.textContent = '▾';
+  }
+}
+
+function hidePeriodicNudge() {
+  const el = document.getElementById('periodic-nudge');
+  if (el) el.classList.remove('on');
+}
+
+function selectPeriodic(val) {
+  document.querySelectorAll('#periodic-opts .settings-radio-opt').forEach(opt => {
+    opt.classList.toggle('selected', opt.dataset.val === val);
+  });
+}
+
+// ── Cover style switching ─────────────────────────────────────────────
+const COVER_STYLES = {
+  warm:  { spine:'#c4843e', from:'#e8b85a', to:'#c4843e' },
+  ink:   { spine:'#2a3a5a', from:'#4a5a7a', to:'#2a3a5a' },
+  bloom: { spine:'#c4908a', from:'#e8c8c4', to:'#c4908a' },
+  moss:  { spine:'#7a8a5a', from:'#a8b888', to:'#7a8a5a' },
+};
+const COVER_STYLE_KEY = 'mood_nb_cover_style';
+
+function getCoverStyle() { return localStorage.getItem(COVER_STYLE_KEY) || 'auto'; }
+function setCoverStyle(name) { localStorage.setItem(COVER_STYLE_KEY, name); }
+
+function switchCoverStyle(name) {
+  const s = COVER_STYLES[name];
+  if (!s) return;
+  autoCover = false;
+  document.documentElement.style.setProperty('--cover-spine', s.spine);
+  document.documentElement.style.setProperty('--cover-from', s.from);
+  document.documentElement.style.setProperty('--cover-to', s.to);
+  document.querySelectorAll('.cs-dot').forEach(d => d.classList.remove('active'));
+  document.querySelector(`.cs-dot[data-style="${name}"]`).classList.add('active');
+  setCoverStyle(name);
+}
+
+function applyCoverStyle(name) {
+  if (name === 'auto') { autoCover = true; return; }
+  autoCover = false;
+  const s = COVER_STYLES[name] || COVER_STYLES.warm;
+  document.documentElement.style.setProperty('--cover-spine', s.spine);
+  document.documentElement.style.setProperty('--cover-from', s.from);
+  document.documentElement.style.setProperty('--cover-to', s.to);
+  document.querySelectorAll('.cs-dot').forEach(d => d.classList.remove('active'));
+  const dot = document.querySelector(`.cs-dot[data-style="${name}"]`);
+  if (dot) dot.classList.add('active');
+}
+
+// ── Init ─────────────────────────────────────────────────────────────
+applyCoverStyle(getCoverStyle());
+lastTimeSlot = getTimeSlot();
+migrateV1();
+getWeather().then(applyWeather);
+
+// Re-check time slot every minute — catches dawn/dusk transitions
+setInterval(() => {
+  if (!autoCover) return;
+  const ts = getTimeSlot();
+  if (ts !== lastTimeSlot) {
+    lastTimeSlot = ts;
+    const theme = lastWeatherCode !== null ? codeToTheme(lastWeatherCode) : codeToTheme(0);
+    const w = { theme, temp: weather.temp, ...THEMES[theme] };
+    applyWeather(w);
+  }
+}, 60 * 1000);
+
+// Refresh weather data every 30 minutes
+setInterval(async () => {
+  const w = await getWeather();
+  applyWeather(w);
+}, 30 * 60 * 1000);
+</script>
+</body>
+</html>
